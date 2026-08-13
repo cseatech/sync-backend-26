@@ -55,4 +55,59 @@ async function adminLogin(payload) {
   };
 }
 
-module.exports = { adminLogin };
+async function changePassword(adminId, payload) {
+  const { oldPassword, newPassword } = payload || {};
+
+  if (!adminId) {
+    const error = new Error("Admin id is required");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  if (!String(oldPassword || "").trim() || !String(newPassword || "").trim()) {
+    const error = new Error("Old password and new password are required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const [admin] = await db
+    .select()
+    .from(admins)
+    .where(eq(admins.admin_id, Number(adminId)))
+    .limit(1);
+
+  if (!admin || !admin.password_hash) {
+    const error = new Error("Admin not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const isOldPasswordValid = await bcrypt.compare(String(oldPassword), admin.password_hash);
+
+  if (!isOldPasswordValid) {
+    const error = new Error("Old password is incorrect");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  if (String(oldPassword) === String(newPassword)) {
+    const error = new Error("New password must be different from the old password");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const hashedPassword = await bcrypt.hash(String(newPassword), 10);
+
+  await db
+    .update(admins)
+    .set({
+      password_hash: hashedPassword,
+    })
+    .where(eq(admins.admin_id, Number(adminId)));
+
+  return {
+    message: "Password changed successfully",
+  };
+}
+
+module.exports = { adminLogin, changePassword };

@@ -13,6 +13,14 @@ async function protect(req, res, next) {
     }
 
     const decoded = verifyToken(token);
+
+    if (!decoded || !decoded.role) {
+      return res.status(401).json({
+        success: false,
+        message: "Token is missing a valid role",
+      });
+    }
+
     req.user = decoded;
     next();
   } catch (error) {
@@ -32,7 +40,10 @@ function authorize(...allowedRoles) {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRole = String(req.user.role || "").toLowerCase();
+    const normalizedAllowedRoles = allowedRoles.map((role) => String(role).toLowerCase());
+
+    if (!normalizedAllowedRoles.includes(userRole)) {
       return res.status(403).json({
         success: false,
         message: "You do not have permission to access this resource",
