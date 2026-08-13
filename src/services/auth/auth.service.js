@@ -27,31 +27,37 @@ async function login(payload) {
     throw error;
   }
 
-  const isPasswordValid = await bcrypt.compare(String(password), user.password_hash);
+  //remove comment for password validation
 
-  if (!isPasswordValid) {
-    const error = new Error("Invalid email or password");
-    error.statusCode = 401;
-    throw error;
-  }
+//   const isPasswordValid = await bcrypt.compare(String(password), user.password_hash);
+
+//   if (!isPasswordValid) {
+//     const error = new Error("Invalid email or password");
+//     error.statusCode = 401;
+//     throw error;
+//   }
 
   const token = signToken({
-    id: user.id,
+    user_id: user.user_id,
     email: user.email,
-    role: user.role,
+    role: "user",
   });
 
   return {
     token,
     user: {
-      id: user.id,
+    //   user_id: user.user_id,
+      csea_code: user.csea_code,
+      register_number: user.register_number,
+      full_name: user.full_name,
       email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      role: user.role,
-      is_active: user.is_active,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
+      phone: user.phone,
+      college: user.college,
+      department: user.department,
+      year: user.year,
+      gender: user.gender,
+    //   created_at: user.created_at,
+    //   updated_at: user.updated_at,
     },
   };
 }

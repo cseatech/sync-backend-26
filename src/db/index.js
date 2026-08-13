@@ -1,7 +1,7 @@
 const { drizzle } = require("drizzle-orm/node-postgres");
 const { Pool } = require("pg");
 const config = require("../config/env");
-const { users } = require("./schema");
+const { users, admins } = require("./schema");
 
 const pool = new Pool({
   connectionString: config.DATABASE_URL,
@@ -9,7 +9,7 @@ const pool = new Pool({
 });
 
 const db = drizzle(pool, {
-  schema: { users },
+  schema: { users, admins },
 });
 
 module.exports = { db, pool };

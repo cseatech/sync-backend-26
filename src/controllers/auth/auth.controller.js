@@ -3,7 +3,8 @@ const { loginSchema } = require("../../validators/auth.validator");
 
 async function login(req, res, next) {
   try {
-    const parsed = loginSchema.parse(req.body);
+    const body = req.body || {};
+    const parsed = loginSchema.parse(body);
     const result = await authService.login(parsed);
 
     res.status(200).json({
@@ -13,9 +14,10 @@ async function login(req, res, next) {
     });
   } catch (error) {
     if (error instanceof Error && error.name === "ZodError") {
+      const message = error.issues?.[0]?.message || "Validation failed";
       return res.status(400).json({
         success: false,
-        message: error.errors[0]?.message || "Validation failed",
+        message,
       });
     }
 
