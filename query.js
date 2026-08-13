@@ -7,7 +7,7 @@ async function testQuery() {
     const result = await pool.query("SELECT * from users");
 
     console.log("Database connected!");
-    console.log(result.rows);
+    console.log(result.length);
   } catch (error) {
     console.error("Query failed:", error);
   } finally {
