@@ -16,7 +16,7 @@ const changePasswordSchema = z.object({
 
 const forgetPasswordSchema = z.object({
   reset_token: z.string().min(1, "Reset token is required"),
-  new_password: z.string().min(6, "New password must be at least 6 characters long"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters long"),
 });
 
 const adminLoginSchema = z.object({

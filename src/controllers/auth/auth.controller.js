@@ -11,7 +11,8 @@ async function login(req, res, next) {
     const body = req.body || {};
     const parsed = loginSchema.parse(body);
     const result = await authService.login(parsed);
-
+    console.log(result);
+    
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -40,7 +41,7 @@ async function login(req, res, next) {
 async function getProfile(req, res, next) {
   try {
     const params = profileByCseaCodeSchema.parse(req.params || {});
-    const profile = await authService.getProfileByCseaCode(params.csea_code);
+    const profile = await authService.getProfileByCseaCode(params.csea_code, req.user);
 
     res.status(200).json({
       success: true,

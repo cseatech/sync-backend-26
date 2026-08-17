@@ -50,18 +50,6 @@ npx drizzle-kit studio
 ```
 
 This starts the Drizzle Studio UI in the browser so you can inspect the database schema and tables.
-### Generate migrations
-
-```bash
-npx drizzle-kit generate
-```
-
-### Apply migrations
-
-```bash
-npx drizzle-kit migrate
-```
-
 
 ## API Base URL
 

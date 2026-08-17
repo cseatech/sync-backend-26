@@ -62,7 +62,7 @@ async function login(payload) {
   };
 }
 
-async function getProfileByCseaCode(cseaCode) {
+async function getProfileByCseaCode(cseaCode, requester = {}) {
   const normalizedCode = String(cseaCode || "").trim();
 
   if (!normalizedCode) {
@@ -80,6 +80,29 @@ async function getProfileByCseaCode(cseaCode) {
   if (!user) {
     const error = new Error("User profile not found");
     error.statusCode = 404;
+    throw error;
+  }
+
+  if (String(requester.role || "").toLowerCase() === "admin") {
+    return {
+      // user_id: user.user_id,
+      csea_code: user.csea_code,
+      register_number: user.register_number,
+      full_name: user.full_name,
+      email: user.email,
+      phone: user.phone,
+      college: user.college,
+      department: user.department,
+      year: user.year,
+      gender: user.gender,
+      // created_at: user.created_at,
+      // updated_at: user.updated_at,
+    };
+  }
+
+  if (Number(requester.user_id) !== Number(user.user_id)) {
+    const error = new Error("You are not allowed to access this profile");
+    error.statusCode = 403;
     throw error;
   }
 
@@ -156,9 +179,9 @@ async function changePassword(userId, payload) {
 }
 
 async function forgetPassword(payload) {
-  const { reset_token, new_password } = payload || {};
+  const { reset_token, newPassword } = payload || {};
 
-  if (!String(reset_token || "").trim() || !String(new_password || "").trim()) {
+  if (!String(reset_token || "").trim() || !String(newPassword || "").trim()) {
     const error = new Error("Reset token and new password are required");
     error.statusCode = 400;
     throw error;
@@ -199,13 +222,13 @@ async function forgetPassword(payload) {
     throw error;
   }
 
-  if (await bcrypt.compare(String(new_password), user.password_hash)) {
+  if (await bcrypt.compare(String(newPassword), user.password_hash)) {
     const error = new Error("New password must be different from the current password");
     error.statusCode = 400;
     throw error;
   }
 
-  const hashedPassword = await bcrypt.hash(String(new_password), 10);
+  const hashedPassword = await bcrypt.hash(String(newPassword), 10);
 
   await db
     .update(users)
