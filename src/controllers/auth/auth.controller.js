@@ -11,7 +11,7 @@ async function login(req, res, next) {
     const body = req.body || {};
     const parsed = loginSchema.parse(body);
     const result = await authService.login(parsed);
-    console.log(result);
+    // console.log(result);
     
     res.status(200).json({
       success: true,

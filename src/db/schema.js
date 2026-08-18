@@ -61,8 +61,9 @@ const events = pgTable("events", {
   contact: jsonb("contact"),
 });
 
-const rounds = pgTable(
-  "rounds",
+const round = pgTable(
+  // round is the actual table name in db
+  "round",
   {
     event_id: bigint("event_id", { mode: "number" }).notNull(),
     round_num: integer("round_num").notNull(),
@@ -76,7 +77,7 @@ const rounds = pgTable(
     eventFk: foreignKey({
       columns: [table.event_id],
       foreignColumns: [events.event_id],
-      name: "rounds_event_id_fkey",
+      name: "round_event_id_fkey",
     }),
   })
 );
@@ -179,7 +180,7 @@ module.exports = {
   users,
   admins,
   events,
-  rounds,
+  round,
   adminAccess,
   eventParticipation,
   participationGarbage,
