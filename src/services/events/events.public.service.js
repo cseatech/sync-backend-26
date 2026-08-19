@@ -1,6 +1,7 @@
 const { eq } = require("drizzle-orm");
 const { db } = require("../../db/index");
 const { events, round, eventParticipation, users } = require("../../db/schema");
+const { throwError } = require("../../utils/serviceError");
 
 /**
  * Fetch all events along with their rounds.
@@ -31,11 +32,12 @@ async function getAllEvents() {
 async function getEventById(eventId) {
   const parsedId = Number(eventId);
 
-  if (!parsedId || isNaN(parsedId) || parsedId <= 0) {
-    const error = new Error("A valid event ID is required");
-    error.statusCode = 400;
-    throw error;
-  }
+  // validated in controller itself using zod
+  // if (!parsedId || isNaN(parsedId) || parsedId <= 0) {
+  //   const error = new Error("A valid event ID is required");
+  //   error.statusCode = 400;
+  //   throw error;
+  // }
 
   const [event] = await db
     .select()
@@ -43,11 +45,7 @@ async function getEventById(eventId) {
     .where(eq(events.event_id, parsedId))
     .limit(1);
 
-  if (!event) {
-    const error = new Error("Event not found");
-    error.statusCode = 404;
-    throw error;
-  }
+  if (!event) throwError("Event not found", 404);
 
   const eventRounds = await db
     .select()
@@ -67,13 +65,14 @@ async function getEventById(eventId) {
  * @param {object} requester - decoded token payload (must contain user_id)
  */
 async function getRegisteredEventsByParticipant(cseaCode, requester = {}) {
-  const normalizedCode = String(cseaCode || "").trim();
+  const normalizedCode = String(cseaCode).trim();
 
-  if (!normalizedCode) {
-    const error = new Error("CSEA code is required");
-    error.statusCode = 400;
-    throw error;
-  }
+  // validated in controller itself using zod
+  // if (!normalizedCode) {
+  //   const error = new Error("CSEA code is required");
+  //   error.statusCode = 400;
+  //   throw error;
+  // }
 
   // Resolve the user_id that belongs to this csea_code
   const [participant] = await db
@@ -81,16 +80,13 @@ async function getRegisteredEventsByParticipant(cseaCode, requester = {}) {
       user_id: users.user_id,
       csea_code: users.csea_code,
       full_name: users.full_name,
+      register_number: users.register_number,
     })
     .from(users)
     .where(eq(users.csea_code, normalizedCode))
     .limit(1);
 
-  if (!participant) {
-    const error = new Error("No user found with the given CSEA code");
-    error.statusCode = 404;
-    throw error;
-  }
+  if (!participant) throwError("No user found with the given CSEA code", 404);
 
   // Only the user themselves (or an admin) may view their registrations
   const requesterRole = String(requester.role || "").toLowerCase();
@@ -99,11 +95,7 @@ async function getRegisteredEventsByParticipant(cseaCode, requester = {}) {
     requesterRole !== "admin" &&
     Number(requester.user_id) !== Number(participant.user_id)
   ) {
-    const error = new Error(
-      "You do not have permission to view this participant's events"
-    );
-    error.statusCode = 403;
-    throw error;
+    throwError("You do not have permission to view this participant's events", 403);
   }
 
   // Fetch participation rows for this user
@@ -117,6 +109,7 @@ async function getRegisteredEventsByParticipant(cseaCode, requester = {}) {
       participant: {
         csea_code: participant.csea_code,
         full_name: participant.full_name,
+        register_number: participant.register_number,
       },
       registered_events: [],
     };
@@ -148,6 +141,7 @@ async function getRegisteredEventsByParticipant(cseaCode, requester = {}) {
     participant: {
       csea_code: participant.csea_code,
       full_name: participant.full_name,
+      register_number: users.register_number,
     },
     registered_events: enriched,
   };

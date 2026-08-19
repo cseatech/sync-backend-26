@@ -11,7 +11,13 @@ const eventIdParamSchema = z.object({
 });
 
 const participantCseaCodeParamSchema = z.object({
-  csea_code: z.string().trim().min(1, "CSEA code is required"),
+  csea_code: z
+    .string()
+    .trim()
+    .min(1, "CSEA code is required")
+    .regex(/^[A-Z]{2}\d{4}$/, {
+      message: "CSEA code format is invalid",
+    }),
 });
 
 module.exports = {

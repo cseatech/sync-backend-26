@@ -3,6 +3,7 @@ const { eq } = require("drizzle-orm");
 const { db } = require("../../db/index");
 const { users } = require("../../db/schema");
 const { signToken, verifyToken } = require("../../utils/jwt");
+const { throwError } = require("../../utils/serviceError");
 
 async function login(payload) {
   const { email, password } = payload || {};
@@ -10,9 +11,7 @@ async function login(payload) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
 
   if (!normalizedEmail || !String(password || "").trim()) {
-    const error = new Error("Email and password are required");
-    error.statusCode = 400;
-    throw error;
+    throwError("Email and password are required", 400);
   }
 
   const [user] = await db
@@ -21,11 +20,7 @@ async function login(payload) {
     .where(eq(users.email, normalizedEmail))
     .limit(1);
 
-  if (!user || !user.password_hash) {
-    const error = new Error("Invalid email or password");
-    error.statusCode = 401;
-    throw error;
-  }
+  if (!user || !user.password_hash) throwError("Invalid email or password", 401);
 
   //remove comment for password validation
 
@@ -65,11 +60,7 @@ async function login(payload) {
 async function getProfileByCseaCode(cseaCode, requester = {}) {
   const normalizedCode = String(cseaCode || "").trim();
 
-  if (!normalizedCode) {
-    const error = new Error("CSEA code is required");
-    error.statusCode = 400;
-    throw error;
-  }
+  if (!normalizedCode) throwError("CSEA code is required", 400);
 
   const [user] = await db
     .select()
@@ -77,11 +68,7 @@ async function getProfileByCseaCode(cseaCode, requester = {}) {
     .where(eq(users.csea_code, normalizedCode))
     .limit(1);
 
-  if (!user) {
-    const error = new Error("User profile not found");
-    error.statusCode = 404;
-    throw error;
-  }
+  if (!user) throwError("User profile not found", 404);
 
   if (String(requester.role || "").toLowerCase() === "admin") {
     return {
@@ -100,11 +87,7 @@ async function getProfileByCseaCode(cseaCode, requester = {}) {
     };
   }
 
-  if (Number(requester.user_id) !== Number(user.user_id)) {
-    const error = new Error("You are not allowed to access this profile");
-    error.statusCode = 403;
-    throw error;
-  }
+  if (Number(requester.user_id) !== Number(user.user_id)) throwError("You are not allowed to access this profile", 403);
 
   return {
     // user_id: user.user_id,
@@ -125,16 +108,10 @@ async function getProfileByCseaCode(cseaCode, requester = {}) {
 async function changePassword(userId, payload) {
   const { oldPassword, newPassword } = payload || {};
 
-  if (!userId) {
-    const error = new Error("User id is required");
-    error.statusCode = 401;
-    throw error;
-  }
+  if (!userId) throwError("User id is required", 401);
 
   if (!String(oldPassword || "").trim() || !String(newPassword || "").trim()) {
-    const error = new Error("Old password and new password are required");
-    error.statusCode = 400;
-    throw error;
+    throwError("Old password and new password are required", 400);
   }
 
   const [user] = await db
@@ -143,24 +120,14 @@ async function changePassword(userId, payload) {
     .where(eq(users.user_id, Number(userId)))
     .limit(1);
 
-  if (!user || !user.password_hash) {
-    const error = new Error("User not found");
-    error.statusCode = 404;
-    throw error;
-  }
+  if (!user || !user.password_hash) throwError("User not found", 404);
 
   const isOldPasswordValid = await bcrypt.compare(String(oldPassword), user.password_hash);
 
-  if (!isOldPasswordValid) {
-    const error = new Error("Old password is incorrect");
-    error.statusCode = 401;
-    throw error;
-  }
+  if (!isOldPasswordValid) throwError("Old password is incorrect", 401);
 
   if (String(oldPassword) === String(newPassword)) {
-    const error = new Error("New password must be different from the old password");
-    error.statusCode = 400;
-    throw error;
+    throwError("New password must be different from the old password", 400);
   }
 
   const hashedPassword = await bcrypt.hash(String(newPassword), 10);
@@ -182,33 +149,23 @@ async function forgetPassword(payload) {
   const { reset_token, newPassword } = payload || {};
 
   if (!String(reset_token || "").trim() || !String(newPassword || "").trim()) {
-    const error = new Error("Reset token and new password are required");
-    error.statusCode = 400;
-    throw error;
+    throwError("Reset token and new password are required", 400);
   }
 
   let decoded;
   try {
     decoded = verifyToken(reset_token);
-  } catch (error) {
-    const err = new Error("Invalid or expired reset token");
-    err.statusCode = 401;
-    throw err;
+  } catch {
+    throwError("Invalid or expired reset token", 401);
   }
 
   if (!decoded || decoded.scope !== "password_reset") {
-    const error = new Error("Invalid reset token scope");
-    error.statusCode = 401;
-    throw error;
+    throwError("Invalid reset token scope", 401);
   }
 
   const normalizedEmail = String(decoded.email || "").trim().toLowerCase();
 
-  if (!normalizedEmail) {
-    const error = new Error("Reset token does not contain an email");
-    error.statusCode = 401;
-    throw error;
-  }
+  if (!normalizedEmail) throwError("Reset token does not contain an email", 401);
 
   const [user] = await db
     .select()
@@ -216,16 +173,10 @@ async function forgetPassword(payload) {
     .where(eq(users.email, normalizedEmail))
     .limit(1);
 
-  if (!user) {
-    const error = new Error("User not found");
-    error.statusCode = 404;
-    throw error;
-  }
+  if (!user) throwError("User not found", 404);
 
   if (await bcrypt.compare(String(newPassword), user.password_hash)) {
-    const error = new Error("New password must be different from the current password");
-    error.statusCode = 400;
-    throw error;
+    throwError("New password must be different from the current password", 400);
   }
 
   const hashedPassword = await bcrypt.hash(String(newPassword), 10);
