@@ -4,71 +4,44 @@ import {
   NextFunction,
 } from "express";
 
-import eventsPublicService from "../../services/events/events.public.service";
+import adminService from "../../services/admin/admin.service";
 
 import {
-  eventIdParamSchema,
-  participantCseaCodeParamSchema,
-} from "../../validators/events.validator";
+  adminLoginSchema,
+  changePasswordSchema,
+} from "../../validators/auth.validator";
 
-async function listAllEvents(
+async function adminLogin(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const data =
-      await eventsPublicService.getAllEvents();
+    const body = req.body || {};
+
+    const parsed =
+      adminLoginSchema.parse(body);
+
+    const result =
+      await adminService.adminLogin(parsed);
 
     res.status(200).json({
       success: true,
-      count: data.length,
-      data,
+      message:
+        "Admin login successful",
+      data: result,
     });
-  } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.statusCode
-    ) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
 
-      return;
-    }
-
-    next(error);
-  }
-}
-
-async function getEventDetails(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const params =
-      eventIdParamSchema.parse(
-        req.params || {}
-      );
-
-    const data =
-      await eventsPublicService.getEventById(
-        params.event_id
-      );
-
-    res.status(200).json({
-      success: true,
-      data,
-    });
+    return;
   } catch (error: unknown) {
     if (
       error instanceof Error &&
       error.name === "ZodError"
     ) {
       const zodError = error as Error & {
-        issues?: Array<{ message?: string }>;
+        issues?: Array<{
+          message?: string;
+        }>;
       };
 
       const message =
@@ -99,34 +72,38 @@ async function getEventDetails(
   }
 }
 
-async function getParticipantEvents(
+async function changePassword(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const params =
-      participantCseaCodeParamSchema.parse(
-        req.params || {}
-      );
+    const body = req.body || {};
 
-    const data =
-      await eventsPublicService.getRegisteredEventsByParticipant(
-        params.csea_code,
-        req.user
+    const parsed =
+      changePasswordSchema.parse(body);
+
+    const result =
+      await adminService.changePassword(
+        req.user?.admin_id,
+        parsed
       );
 
     res.status(200).json({
       success: true,
-      data,
+      message: result.message,
     });
+
+    return;
   } catch (error: unknown) {
     if (
       error instanceof Error &&
       error.name === "ZodError"
     ) {
       const zodError = error as Error & {
-        issues?: Array<{ message?: string }>;
+        issues?: Array<{
+          message?: string;
+        }>;
       };
 
       const message =
@@ -158,7 +135,6 @@ async function getParticipantEvents(
 }
 
 export {
-  listAllEvents,
-  getEventDetails,
-  getParticipantEvents,
+  adminLogin,
+  changePassword,
 };
