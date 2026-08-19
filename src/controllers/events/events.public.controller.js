@@ -2,7 +2,7 @@ const eventsPublicService = require("../../services/events/events.public.service
 const {
   eventIdParamSchema,
   participantCseaCodeParamSchema,
-} = require("../../validators/events.public.validator");
+} = require("../../validators/events.validator");
 
 /**
  * GET /api/v1/events

@@ -31,6 +31,7 @@ async function getAllEvents() {
  */
 async function getEventById(eventId) {
   const parsedId = Number(eventId);
+  if (!parsedId) throwError("Event ID is required", 400);
 
   // validated in controller itself using zod
   // if (!parsedId || isNaN(parsedId) || parsedId <= 0) {
@@ -66,6 +67,7 @@ async function getEventById(eventId) {
  */
 async function getRegisteredEventsByParticipant(cseaCode, requester = {}) {
   const normalizedCode = String(cseaCode).trim();
+  if (!normalizedCode) throwError("CSEA code is required", 400);
 
   // validated in controller itself using zod
   // if (!normalizedCode) {
