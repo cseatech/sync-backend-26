@@ -9,7 +9,7 @@ import eventsPublicService from "../../services/events/events.public.service";
 import {
   eventIdParamSchema,
   participantCseaCodeParamSchema,
-} from "../../validators/events.public.validator";
+} from "../../validators/events.validator";
 
 async function listAllEvents(
   req: Request,

@@ -6,6 +6,7 @@ import morgan from "morgan";
 import authRoutes from "./routes/auth/auth.routes";
 import adminRoutes from "./routes/admin/admin.routes";
 import eventsPublicRoutes from "./routes/events/events.public.routes";
+import eventsAdminRoutes from "./routes/events/events.admin.routes";
 
 import {
   notFoundHandler,
@@ -51,6 +52,7 @@ app.get("/health", (req, res) => {
 app.use("/api/v1", authRoutes);
 app.use("/api/v1", adminRoutes);
 app.use("/api/v1", eventsPublicRoutes);
+app.use("/api/v1", eventsAdminRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -9,6 +9,8 @@ import {
   users,
 } from "../../db/schema";
 
+import { throwError } from "../../utils/serviceError";
+
 import {
   UserJwtPayload,
   AdminJwtPayload,
@@ -17,17 +19,15 @@ import {
 type Requester =
   | UserJwtPayload
   | AdminJwtPayload
-  | {
-      user_id?: number;
-      role?: string;
-    }
   | undefined;
 
+/**
+ * Fetch all events along with their rounds.
+ */
 async function getAllEvents() {
-  const allEvents =
-    await db
-      .select()
-      .from(events);
+  const allEvents = await db
+    .select()
+    .from(events);
 
   if (
     !allEvents ||
@@ -36,10 +36,9 @@ async function getAllEvents() {
     return [];
   }
 
-  const allRounds =
-    await db
-      .select()
-      .from(round);
+  const allRounds = await db
+    .select()
+    .from(round);
 
   const eventsWithRounds =
     allEvents.map((event) => ({
@@ -61,58 +60,51 @@ async function getAllEvents() {
   return eventsWithRounds;
 }
 
+/**
+ * Fetch a single event by event_id,
+ * including its rounds.
+ *
+ * @param eventId - Event ID
+ */
 async function getEventById(
   eventId: number | string
 ) {
-  const parsedId =
-    Number(eventId);
+  const parsedId = Number(eventId);
 
-  if (
-    !parsedId ||
-    Number.isNaN(parsedId) ||
-    parsedId <= 0
-  ) {
-    const error = new Error(
-      "A valid event ID is required"
+  if (!parsedId) {
+    throwError(
+      "Event ID is required",
+      400
     );
-
-    error.statusCode = 400;
-
-    throw error;
   }
 
-  const [event] =
-    await db
-      .select()
-      .from(events)
-      .where(
-        eq(
-          events.event_id,
-          parsedId
-        )
+  const [event] = await db
+    .select()
+    .from(events)
+    .where(
+      eq(
+        events.event_id,
+        parsedId
       )
-      .limit(1);
+    )
+    .limit(1);
 
   if (!event) {
-    const error = new Error(
-      "Event not found"
+    throwError(
+      "Event not found",
+      404
     );
-
-    error.statusCode = 404;
-
-    throw error;
   }
 
-  const eventRounds =
-    await db
-      .select()
-      .from(round)
-      .where(
-        eq(
-          round.event_id,
-          parsedId
-        )
-      );
+  const eventRounds = await db
+    .select()
+    .from(round)
+    .where(
+      eq(
+        round.event_id,
+        parsedId
+      )
+    );
 
   return {
     ...event,
@@ -125,30 +117,40 @@ async function getEventById(
   };
 }
 
+/**
+ * Fetch all events a user is registered for,
+ * identified by their csea_code.
+ *
+ * The requesting user's user_id is
+ * cross-checked for authorization.
+ *
+ * @param cseaCode - CSEA code from URL
+ * @param requester - decoded JWT payload
+ */
 async function getRegisteredEventsByParticipant(
   cseaCode: string,
   requester?: Requester
 ) {
   const normalizedCode =
-    String(cseaCode || "")
-      .trim();
+    String(cseaCode).trim();
 
   if (!normalizedCode) {
-    const error = new Error(
-      "CSEA code is required"
+    throwError(
+      "CSEA code is required",
+      400
     );
-
-    error.statusCode = 400;
-
-    throw error;
   }
 
+  // Resolve the user_id that belongs
+  // to this csea_code.
   const [participant] =
     await db
       .select({
         user_id: users.user_id,
         csea_code: users.csea_code,
         full_name: users.full_name,
+        register_number:
+          users.register_number,
       })
       .from(users)
       .where(
@@ -160,34 +162,31 @@ async function getRegisteredEventsByParticipant(
       .limit(1);
 
   if (!participant) {
-    const error = new Error(
-      "No user found with the given CSEA code"
+    throwError(
+      "No user found with the given CSEA code",
+      404
     );
-
-    error.statusCode = 404;
-
-    throw error;
   }
 
-  const requesterRole =
-    String(
-      requester?.role || ""
-    ).toLowerCase();
+  // Only the user themselves or an
+  // admin may view their registrations.
+  const requesterRole = String(
+    requester?.role || ""
+  ).toLowerCase();
 
   if (
     requesterRole !== "admin" &&
     Number(requester?.user_id) !==
       Number(participant.user_id)
   ) {
-    const error = new Error(
-      "You do not have permission to view this participant's events"
+    throwError(
+      "You do not have permission to view this participant's events",
+      403
     );
-
-    error.statusCode = 403;
-
-    throw error;
   }
 
+  // Fetch participation rows for
+  // this user.
   const participationRows =
     await db
       .select()
@@ -207,23 +206,30 @@ async function getRegisteredEventsByParticipant(
       participant: {
         csea_code:
           participant.csea_code,
+
         full_name:
           participant.full_name,
+
+        register_number:
+          participant.register_number,
       },
 
       registered_events: [],
     };
   }
 
+  // Collect event IDs registered
+  // by this user.
   const registeredEventIds =
     participationRows.map(
       (p) => p.event_id
     );
 
-  const allEvents =
-    await db
-      .select()
-      .from(events);
+  // Fetch all events and filter only
+  // the ones this user is registered for.
+  const allEvents = await db
+    .select()
+    .from(events);
 
   const registeredEvents =
     allEvents.filter((event) =>
@@ -232,6 +238,8 @@ async function getRegisteredEventsByParticipant(
       )
     );
 
+  // Attach participation metadata
+  // to each event.
   const enriched =
     registeredEvents.map(
       (event) => {
@@ -244,9 +252,11 @@ async function getRegisteredEventsByParticipant(
 
         return {
           ...event,
+
           team_no:
             participation?.team_no ??
             null,
+
           registered_at:
             participation?.created_at ??
             null,
@@ -258,8 +268,12 @@ async function getRegisteredEventsByParticipant(
     participant: {
       csea_code:
         participant.csea_code,
+
       full_name:
         participant.full_name,
+
+      register_number:
+        participant.register_number,
     },
 
     registered_events:
@@ -267,7 +281,7 @@ async function getRegisteredEventsByParticipant(
   };
 }
 
-export {
+export default {
   getAllEvents,
   getEventById,
   getRegisteredEventsByParticipant,

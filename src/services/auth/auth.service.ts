@@ -17,49 +17,66 @@ import {
   ForgetPasswordInput,
 } from "../../validators/auth.validator";
 
-async function login(payload: LoginInput) {
-  const { email, password } = payload;
+import { throwError } from "../../utils/serviceError";
 
-  const normalizedEmail = email
+async function login(
+  payload: LoginInput
+) {
+  const {
+    email,
+    password,
+  } = payload;
+
+  const normalizedEmail = String(
+    email || ""
+  )
     .trim()
     .toLowerCase();
 
-  if (!normalizedEmail || !password.trim()) {
-    const error = new Error(
-      "Email and password are required"
+  if (
+    !normalizedEmail ||
+    !String(password || "").trim()
+  ) {
+    throwError(
+      "Email and password are required",
+      400
     );
-
-    error.statusCode = 400;
-
-    throw error;
   }
 
   const [user] = await db
     .select()
     .from(users)
-    .where(eq(users.email, normalizedEmail))
+    .where(
+      eq(
+        users.email,
+        normalizedEmail
+      )
+    )
     .limit(1);
 
-  if (!user || !user.password_hash) {
-    const error = new Error(
-      "Invalid email or password"
+  if (
+    !user ||
+    !user.password_hash
+  ) {
+    throwError(
+      "Invalid email or password",
+      401
     );
-
-    error.statusCode = 401;
-
-    throw error;
   }
 
   // Remove comment for password validation
-  // const isPasswordValid = await bcrypt.compare(
-  //   password,
-  //   user.password_hash
-  // );
+
+  // const isPasswordValid =
+  //   await bcrypt.compare(
+  //     String(password),
+  //     user.password_hash
+  //   );
 
   // if (!isPasswordValid) {
-  //   const error = new Error("Invalid email or password");
-  //   error.statusCode = 401;
-  //   throw error;
+  //   throwError(
+  //     "Invalid email or password",
+  //     401
+  //   );
   // }
 
   const tokenPayload: UserJwtPayload = {
@@ -68,7 +85,8 @@ async function login(payload: LoginInput) {
     role: "user",
   };
 
-  const token = signToken(tokenPayload);
+  const token =
+    signToken(tokenPayload);
 
   return {
     token,
@@ -76,7 +94,8 @@ async function login(payload: LoginInput) {
     user: {
       // user_id: user.user_id,
       csea_code: user.csea_code,
-      register_number: user.register_number,
+      register_number:
+        user.register_number,
       full_name: user.full_name,
       email: user.email,
       phone: user.phone,
@@ -84,6 +103,7 @@ async function login(payload: LoginInput) {
       department: user.department,
       year: user.year,
       gender: user.gender,
+
       // created_at: user.created_at,
       // updated_at: user.updated_at,
     },
@@ -92,50 +112,52 @@ async function login(payload: LoginInput) {
 
 async function getProfileByCseaCode(
   cseaCode: string,
-  requester?: UserJwtPayload | {
-    user_id?: number;
-    role?: string;
-  }
+  requester:
+    | UserJwtPayload
+    | {
+        user_id?: number;
+        role?: string;
+      } = {}
 ) {
   const normalizedCode = String(
     cseaCode || ""
-  )
-    .trim();
+  ).trim();
 
   if (!normalizedCode) {
-    const error = new Error(
-      "CSEA code is required"
+    throwError(
+      "CSEA code is required",
+      400
     );
-
-    error.statusCode = 400;
-
-    throw error;
   }
 
   const [user] = await db
     .select()
     .from(users)
-    .where(eq(users.csea_code, normalizedCode))
+    .where(
+      eq(
+        users.csea_code,
+        normalizedCode
+      )
+    )
     .limit(1);
 
   if (!user) {
-    const error = new Error(
-      "User profile not found"
+    throwError(
+      "User profile not found",
+      404
     );
-
-    error.statusCode = 404;
-
-    throw error;
   }
 
   if (
-    String(requester?.role || "").toLowerCase() ===
-    "admin"
+    String(
+      requester.role || ""
+    ).toLowerCase() === "admin"
   ) {
     return {
       // user_id: user.user_id,
       csea_code: user.csea_code,
-      register_number: user.register_number,
+      register_number:
+        user.register_number,
       full_name: user.full_name,
       email: user.email,
       phone: user.phone,
@@ -143,28 +165,27 @@ async function getProfileByCseaCode(
       department: user.department,
       year: user.year,
       gender: user.gender,
+
       // created_at: user.created_at,
       // updated_at: user.updated_at,
     };
   }
 
   if (
-    Number(requester?.user_id) !==
+    Number(requester.user_id) !==
     Number(user.user_id)
   ) {
-    const error = new Error(
-      "You are not allowed to access this profile"
+    throwError(
+      "You are not allowed to access this profile",
+      403
     );
-
-    error.statusCode = 403;
-
-    throw error;
   }
 
   return {
     // user_id: user.user_id,
     csea_code: user.csea_code,
-    register_number: user.register_number,
+    register_number:
+      user.register_number,
     full_name: user.full_name,
     email: user.email,
     phone: user.phone,
@@ -172,6 +193,7 @@ async function getProfileByCseaCode(
     department: user.department,
     year: user.year,
     gender: user.gender,
+
     // created_at: user.created_at,
     // updated_at: user.updated_at,
   };
@@ -187,77 +209,77 @@ async function changePassword(
   } = payload;
 
   if (!userId) {
-    const error = new Error(
-      "User id is required"
+    throwError(
+      "User id is required",
+      401
     );
-
-    error.statusCode = 401;
-
-    throw error;
   }
 
   if (
-    !oldPassword.trim() ||
-    !newPassword.trim()
+    !String(oldPassword || "").trim() ||
+    !String(newPassword || "").trim()
   ) {
-    const error = new Error(
-      "Old password and new password are required"
+    throwError(
+      "Old password and new password are required",
+      400
     );
-
-    error.statusCode = 400;
-
-    throw error;
   }
 
   const [user] = await db
     .select()
     .from(users)
-    .where(eq(users.user_id, Number(userId)))
+    .where(
+      eq(
+        users.user_id,
+        Number(userId)
+      )
+    )
     .limit(1);
 
-  if (!user || !user.password_hash) {
-    const error = new Error(
-      "User not found"
+  if (
+    !user ||
+    !user.password_hash
+  ) {
+    throwError(
+      "User not found",
+      404
     );
-
-    error.statusCode = 404;
-
-    throw error;
   }
 
   const isOldPasswordValid =
     await bcrypt.compare(
-      oldPassword,
+      String(oldPassword),
       user.password_hash
     );
 
   if (!isOldPasswordValid) {
-    const error = new Error(
-      "Old password is incorrect"
+    throwError(
+      "Old password is incorrect",
+      401
     );
-
-    error.statusCode = 401;
-
-    throw error;
   }
 
-  if (oldPassword === newPassword) {
-    const error = new Error(
-      "New password must be different from the old password"
+  if (
+    String(oldPassword) ===
+    String(newPassword)
+  ) {
+    throwError(
+      "New password must be different from the old password",
+      400
     );
-
-    error.statusCode = 400;
-
-    throw error;
   }
 
   const hashedPassword =
-    await bcrypt.hash(newPassword, 10);
+    await bcrypt.hash(
+      String(newPassword),
+      10
+    );
 
   await db
     .update(users)
     .set({
-      password_hash: hashedPassword,
+      password_hash:
+        hashedPassword,
       updated_at: new Date(),
     })
     .where(
@@ -268,7 +290,8 @@ async function changePassword(
     );
 
   return {
-    message: "Password changed successfully",
+    message:
+      "Password changed successfully",
   };
 }
 
@@ -281,114 +304,95 @@ async function forgetPassword(
   } = payload;
 
   if (
-    !reset_token.trim() ||
-    !newPassword.trim()
+    !String(reset_token || "").trim() ||
+    !String(newPassword || "").trim()
   ) {
-    const error = new Error(
-      "Reset token and new password are required"
+    throwError(
+      "Reset token and new password are required",
+      400
     );
-
-    error.statusCode = 400;
-
-    throw error;
   }
 
   let decoded: PasswordResetJwtPayload;
 
   try {
-    const tokenPayload =
-      verifyToken(reset_token);
-
-    if (
-      tokenPayload.role ||
-      tokenPayload.scope !==
-        "password_reset"
-    ) {
-      throw new Error(
-        "Invalid reset token scope"
-      );
-    }
-
     decoded =
-      tokenPayload as PasswordResetJwtPayload;
-  } catch (error) {
-    const err = new Error(
-      "Invalid or expired reset token"
+      verifyToken(
+        reset_token
+      ) as PasswordResetJwtPayload;
+  } catch {
+    throwError(
+      "Invalid or expired reset token",
+      401
     );
-
-    err.statusCode = 401;
-
-    throw err;
   }
 
   if (
-    decoded.scope !== "password_reset"
+    !decoded ||
+    decoded.scope !==
+      "password_reset"
   ) {
-    const error = new Error(
-      "Invalid reset token scope"
+    throwError(
+      "Invalid reset token scope",
+      401
     );
-
-    error.statusCode = 401;
-
-    throw error;
   }
 
-  const normalizedEmail = String(
-    decoded.email || ""
-  )
-    .trim()
-    .toLowerCase();
+  const normalizedEmail =
+    String(
+      decoded.email || ""
+    )
+      .trim()
+      .toLowerCase();
 
   if (!normalizedEmail) {
-    const error = new Error(
-      "Reset token does not contain an email"
+    throwError(
+      "Reset token does not contain an email",
+      401
     );
-
-    error.statusCode = 401;
-
-    throw error;
   }
 
   const [user] = await db
     .select()
     .from(users)
     .where(
-      eq(users.email, normalizedEmail)
+      eq(
+        users.email,
+        normalizedEmail
+      )
     )
     .limit(1);
 
   if (!user) {
-    const error = new Error(
-      "User not found"
+    throwError(
+      "User not found",
+      404
     );
-
-    error.statusCode = 404;
-
-    throw error;
   }
 
   if (
     await bcrypt.compare(
-      newPassword,
+      String(newPassword),
       user.password_hash
     )
   ) {
-    const error = new Error(
-      "New password must be different from the current password"
+    throwError(
+      "New password must be different from the current password",
+      400
     );
-
-    error.statusCode = 400;
-
-    throw error;
   }
 
   const hashedPassword =
-    await bcrypt.hash(newPassword, 10);
+    await bcrypt.hash(
+      String(newPassword),
+      10
+    );
 
   await db
     .update(users)
     .set({
-      password_hash: hashedPassword,
+      password_hash:
+        hashedPassword,
       updated_at: new Date(),
     })
     .where(
@@ -399,11 +403,12 @@ async function forgetPassword(
     );
 
   return {
-    message: "Password reset successful",
+    message:
+      "Password reset successful",
   };
 }
 
-export {
+export default {
   login,
   getProfileByCseaCode,
   changePassword,

@@ -14,6 +14,8 @@ import {
   ChangePasswordInput,
 } from "../../validators/auth.validator";
 
+import { throwError } from "../../utils/serviceError";
+
 async function adminLogin(
   payload: AdminLoginInput
 ) {
@@ -22,21 +24,20 @@ async function adminLogin(
     password,
   } = payload;
 
-  const normalizedEmail = email
+  const normalizedEmail = String(
+    email || ""
+  )
     .trim()
     .toLowerCase();
 
   if (
     !normalizedEmail ||
-    !password.trim()
+    !String(password || "").trim()
   ) {
-    const error = new Error(
-      "Email and password are required"
+    throwError(
+      "Email and password are required",
+      400
     );
-
-    error.statusCode = 400;
-
-    throw error;
   }
 
   const [admin] = await db
@@ -54,32 +55,33 @@ async function adminLogin(
     !admin ||
     !admin.password_hash
   ) {
-    const error = new Error(
-      "Invalid admin credentials"
+    throwError(
+      "Invalid admin credentials",
+      401
     );
-
-    error.statusCode = 401;
-
-    throw error;
   }
 
   // Remove comment for password validation
-  // const isPasswordValid = await bcrypt.compare(
-  //   password,
-  //   admin.password_hash
-  // );
+
+  // const isPasswordValid =
+  //   await bcrypt.compare(
+  //     String(password),
+  //     admin.password_hash
+  //   );
 
   // if (!isPasswordValid) {
-  //   const error = new Error("Invalid admin credentials");
-  //   error.statusCode = 401;
-  //   throw error;
+  //   throwError(
+  //     "Invalid admin credentials",
+  //     401
+  //   );
   // }
 
   const tokenPayload: AdminJwtPayload = {
     admin_id: admin.admin_id,
     email: admin.email,
     role: "admin",
-    privileged: admin.privileged,
+    privileged:
+      admin.privileged,
   };
 
   const token =
@@ -94,7 +96,8 @@ async function adminLogin(
       email: admin.email,
       position: admin.position,
       domain: admin.domain,
-      privileged: admin.privileged,
+      privileged:
+        admin.privileged,
     },
   };
 }
@@ -109,26 +112,20 @@ async function changePassword(
   } = payload;
 
   if (!adminId) {
-    const error = new Error(
-      "Admin id is required"
+    throwError(
+      "Admin id is required",
+      401
     );
-
-    error.statusCode = 401;
-
-    throw error;
   }
 
   if (
-    !oldPassword.trim() ||
-    !newPassword.trim()
+    !String(oldPassword || "").trim() ||
+    !String(newPassword || "").trim()
   ) {
-    const error = new Error(
-      "Old password and new password are required"
+    throwError(
+      "Old password and new password are required",
+      400
     );
-
-    error.statusCode = 400;
-
-    throw error;
   }
 
   const [admin] = await db
@@ -146,51 +143,46 @@ async function changePassword(
     !admin ||
     !admin.password_hash
   ) {
-    const error = new Error(
-      "Admin not found"
+    throwError(
+      "Admin not found",
+      404
     );
-
-    error.statusCode = 404;
-
-    throw error;
   }
 
   const isOldPasswordValid =
     await bcrypt.compare(
-      oldPassword,
+      String(oldPassword),
       admin.password_hash
     );
 
   if (!isOldPasswordValid) {
-    const error = new Error(
-      "Old password is incorrect"
+    throwError(
+      "Old password is incorrect",
+      401
     );
-
-    error.statusCode = 401;
-
-    throw error;
   }
 
-  if (oldPassword === newPassword) {
-    const error = new Error(
-      "New password must be different from the old password"
+  if (
+    String(oldPassword) ===
+    String(newPassword)
+  ) {
+    throwError(
+      "New password must be different from the old password",
+      400
     );
-
-    error.statusCode = 400;
-
-    throw error;
   }
 
   const hashedPassword =
     await bcrypt.hash(
-      newPassword,
+      String(newPassword),
       10
     );
 
   await db
     .update(admins)
     .set({
-      password_hash: hashedPassword,
+      password_hash:
+        hashedPassword,
     })
     .where(
       eq(
@@ -205,7 +197,7 @@ async function changePassword(
   };
 }
 
-export {
+export default {
   adminLogin,
   changePassword,
 };
