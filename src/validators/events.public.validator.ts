@@ -5,7 +5,7 @@ const eventIdParamSchema = z.object({
     .string()
     .trim()
     .min(1, "Event ID is required")
-    .refine((val) => /^\d+$/.test(val) && Number(val) > 0, {
+    .refine((val: string) => /^\d+$/.test(val) && Number(val) > 0, {
       message: "Event ID must be a positive integer",
     }),
 });
