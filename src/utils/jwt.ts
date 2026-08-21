@@ -2,6 +2,7 @@ import jwt, {
   JwtPayload as DefaultJwtPayload,
   SignOptions,
 } from "jsonwebtoken";
+import { throwError } from "./serviceError";
 
 const JWT_SECRET = process.env.JWT_SECRET || "change_me_in_production";
 
@@ -43,7 +44,7 @@ export function verifyToken(token: string): AppJwtPayload {
   const decoded = jwt.verify(token, JWT_SECRET);
 
   if (typeof decoded === "string") {
-    throw new Error("Invalid JWT payload");
+    throwError("Invalid JWT payload", 401);
   }
 
   return decoded as AppJwtPayload;

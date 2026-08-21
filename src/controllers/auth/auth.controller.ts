@@ -224,7 +224,7 @@ async function getOTP(req: Request, res: Response, next: NextFunction): Promise<
 async function verifyOTP(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { email, OTP, token } = req.body;
-    const resetToken = await authService.verifyOTP(email, OTP, token);
+    const resetToken = await authService.verifyEnteredOTP(email, OTP, token);
     if (resetToken) {
       res.status(200).json({
         success: true,

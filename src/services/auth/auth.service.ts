@@ -259,8 +259,8 @@ async function requestOTP(email: string) {
     await sendMail(email, " OTP for resetting password", `Your OTP code is: ${OTP}`);
     return OTPToken;
 }
-async function verifyOTP(email: string, OTP: number | string, token: string) {
-  const isValid = verifyOTP(OTP, email, token);
+async function verifyEnteredOTP(email: string, OTP: number | string, token: string) {
+  const isValid = verifyOTP(String(OTP), email, token);
   if (!isValid) {
     throwError("Invalid or expired OTP", 401);
   }
@@ -277,5 +277,5 @@ export default {
   changePassword,
   forgetPassword,
   requestOTP,
-  verifyOTP,
+  verifyEnteredOTP,
 };
