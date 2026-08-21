@@ -184,5 +184,86 @@ async function forgetPassword(
     next(error);
   }
 }
+async function getOTP(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { email } = req.body;
+    const OTPToken = await authService.requestOTP(email);
+    res.status(200).json({
+      success: true,
+      message: "OTP sent successfully",
+      token: OTPToken,
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "ZodError") {
+      const zodError = error as Error & {
+        issues?: Array<{ message?: string }>;
+      };
 
-export { login, getProfile, changePassword, forgetPassword };
+      const message = zodError.issues?.[0]?.message || "Validation failed";
+
+      res.status(400).json({
+        success: false,
+        message,
+      });
+
+      return;
+    }
+
+    if (error instanceof Error && error.statusCode) {
+      res.status(error.statusCode).json({
+        success: false,
+        message: error.message,
+      });
+
+      return;
+    }
+
+    next(error);
+  }
+}
+async function verifyOTP(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { email, OTP, token } = req.body;
+    const resetToken = await authService.verifyOTP(email, OTP, token);
+    if (resetToken) {
+      res.status(200).json({
+        success: true,
+        message: "OTP verified successfully",
+        token: resetToken,
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "ZodError") {
+      const zodError = error as Error & {
+        issues?: Array<{ message?: string }>;
+      };
+
+      const message = zodError.issues?.[0]?.message || "Validation failed";
+
+      res.status(400).json({
+        success: false,
+        message,
+      });
+
+      return;
+    }
+
+    if (error instanceof Error && error.statusCode) {
+      res.status(error.statusCode).json({
+        success: false,
+        message: error.message,
+      });
+
+      return;
+    }
+
+    next(error);
+  }
+}
+
+export { login, getProfile, changePassword, forgetPassword, getOTP, verifyOTP };

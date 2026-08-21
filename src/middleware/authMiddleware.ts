@@ -1,13 +1,11 @@
 import { Request, Response, NextFunction } from "express";
+import { verifyToken,AppJwtPayload} from "../utils/jwt";
 
-import { verifyToken, UserJwtPayload, AdminJwtPayload } from "../utils/jwt";
-
-type AuthenticatedUser = UserJwtPayload | AdminJwtPayload;
 
 declare global {
   namespace Express {
     interface Request {
-      user?: AuthenticatedUser;
+      user?: AppJwtPayload;
     }
   }
 }

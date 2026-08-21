@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import type { StringValue } from "ms";
-import type { OtpPayload } from "./jwt";
+import type { OTPPayload } from "./jwt";
 
 const SERVER_SECRET =
   process.env.SERVER_SECRET ||
@@ -15,18 +15,18 @@ function generateOTP(): number {
   return crypto.randomInt(100000, 1000000);
 }
 
-function hashOTP(otp: number | string): string {
+function hashOTP(OTP: number | string): string {
   return crypto
     .createHash("sha256")
-    .update(`${otp}${SERVER_SECRET}`)
+    .update(`${OTP}${SERVER_SECRET}`)
     .digest("hex");
 }
 
-function getOtpToken(OTP: number | string, email: string): string {
+function getOTPToken(OTP: number | string, email: string): string {
   return jwt.sign(
     {
       email,
-      otpHash: hashOTP(OTP),
+      OTPHash: hashOTP(OTP),
     },
     SERVER_SECRET,
     {
@@ -41,11 +41,11 @@ function verifyOTP(
   token: string,
 ): boolean {
   try {
-    const payload = jwt.verify(token, SERVER_SECRET) as OtpPayload;
+    const payload = jwt.verify(token, SERVER_SECRET) as OTPPayload;
 
     const expectedHash = Buffer.from(hashOTP(OTP), "utf8");
 
-    const actualHash = Buffer.from(String(payload.otpHash || ""), "utf8");
+    const actualHash = Buffer.from(String(payload.OTPHash || ""), "utf8");
 
     return (
       payload.email === email &&
@@ -57,4 +57,4 @@ function verifyOTP(
   }
 }
 
-export { generateOTP, getOtpToken, verifyOTP };
+export { generateOTP, getOTPToken, verifyOTP };

@@ -3,14 +3,14 @@ import { eq } from "drizzle-orm";
 
 import { db } from "../../db/index";
 import { users } from "../../db/schema";
-
+import {generateOTP,verifyOTP,getOTPToken} from "../../utils/OTP";
 import {
   signToken,
   verifyToken,
   UserJwtPayload,
   PasswordResetJwtPayload,
 } from "../../utils/jwt";
-
+import {sendMail} from "../../utils/email";
 import {
   LoginInput,
   ChangePasswordInput,
@@ -245,10 +245,37 @@ async function forgetPassword(payload: ForgetPasswordInput) {
     message: "Password reset successful",
   };
 }
-
+async function requestOTP(email: string) {
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+    if (!user) {
+      throwError("User not found", 404);
+    }
+    const OTP=generateOTP();
+    const OTPToken=getOTPToken(OTP,email);
+    await sendMail(email, " OTP for resetting password", `Your OTP code is: ${OTP}`);
+    return OTPToken;
+}
+async function verifyOTP(email: string, OTP: number | string, token: string) {
+  const isValid = verifyOTP(OTP, email, token);
+  if (!isValid) {
+    throwError("Invalid or expired OTP", 401);
+  }
+  const resetTokenPayload: PasswordResetJwtPayload = {
+    email,
+    scope: "password_reset"
+  };
+  const resetToken = signToken(resetTokenPayload);
+  return resetToken;
+}
 export default {
   login,
   getProfileByCseaCode,
   changePassword,
   forgetPassword,
+  requestOTP,
+  verifyOTP,
 };

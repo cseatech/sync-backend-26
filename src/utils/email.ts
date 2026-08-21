@@ -4,8 +4,9 @@ async function sendMail(
   body: string
 ): Promise<void> {
   // TODO: implement email sending
+  console.log(to,subject,body);
 }
 
-export default {
-  sendMail,
+export {
+  sendMail
 };

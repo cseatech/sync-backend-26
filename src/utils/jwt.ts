@@ -23,13 +23,13 @@ export interface PasswordResetJwtPayload extends DefaultJwtPayload {
   scope: "password_reset";
 }
 
-export interface OtpPayload extends DefaultJwtPayload {
+export interface OTPPayload extends DefaultJwtPayload {
   email: string;
-  otpHash: string;
+  OTPHash: string;
 }
 
-export type AppJwtPayload =
-  UserJwtPayload | AdminJwtPayload | PasswordResetJwtPayload;
+
+export  type AppJwtPayload = UserJwtPayload | AdminJwtPayload | PasswordResetJwtPayload | OTPPayload;
 
 export function signToken(payload: AppJwtPayload): string {
   const options: SignOptions = {
