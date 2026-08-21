@@ -72,9 +72,6 @@ async function getEventById(eventId: number | string) {
  * Fetch all events a user is registered for,
  * identified by their csea_code.
  *
- * The requesting user's user_id is
- * cross-checked for authorization.
- *
  * @param cseaCode - CSEA code from URL
  * @param requester - decoded JWT payload
  */
@@ -88,8 +85,7 @@ async function getRegisteredEventsByParticipant(
     throwError("CSEA code is required", 400);
   }
 
-  // Resolve the user_id that belongs
-  // to this csea_code.
+  // Resolve the user_id that belongs to this csea_code.
   const [participant] = await db
     .select({
       user_id: users.user_id,
@@ -105,8 +101,7 @@ async function getRegisteredEventsByParticipant(
     throwError("No user found with the given CSEA code", 404);
   }
 
-  // Only the user themselves or an
-  // admin may view their registrations.
+  // Only the user themselves or an admin may view their registrations.
   const requesterRole = String(requester?.role || "").toLowerCase();
 
   if (
@@ -119,8 +114,7 @@ async function getRegisteredEventsByParticipant(
     );
   }
 
-  // Fetch participation rows for
-  // this user.
+  // Fetch participation rows for this user.
   const participationRows = await db
     .select()
     .from(eventParticipation)
@@ -140,20 +134,17 @@ async function getRegisteredEventsByParticipant(
     };
   }
 
-  // Collect event IDs registered
-  // by this user.
+  // Collect event IDs registered by this user.
   const registeredEventIds = participationRows.map((p) => p.event_id);
 
-  // Fetch all events and filter only
-  // the ones this user is registered for.
+  // Fetch all events and filter only the ones this user is registered for.
   const allEvents = await db.select().from(events);
 
   const registeredEvents = allEvents.filter((event) =>
     registeredEventIds.includes(event.event_id),
   );
 
-  // Attach participation metadata
-  // to each event.
+  // Attach participation metadata to each event.
   const enriched = registeredEvents.map((event) => {
     const participation = participationRows.find(
       (p) => p.event_id === event.event_id,

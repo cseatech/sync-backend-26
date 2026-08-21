@@ -2,6 +2,7 @@ import {
   pgTable,
   pgEnum,
   bigint,
+  bigserial,
   boolean,
   date,
   integer,
@@ -262,6 +263,10 @@ const eventParticipation = pgTable(
 );
 
 const participationGarbage = pgTable("participation_garbage", {
+  garbage_id: bigserial("garbage_id", {
+    mode: "number",
+  }).primaryKey(),
+
   event_id: bigint("event_id", {
     mode: "number",
   }).notNull(),
