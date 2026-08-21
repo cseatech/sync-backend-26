@@ -13,6 +13,14 @@ import {
 
 import { throwError } from "../../utils/serviceError";
 
+/**
+ * Authenticate an administrator and return an access token with profile data.
+ *
+ * Validates the supplied credentials against the administrators table,
+ * then creates a JWT for authenticated admin requests.
+ *
+ * @param payload - Administrator email and password
+ */
 async function adminLogin(payload: AdminLoginInput) {
   const { email, password } = payload;
 
@@ -66,6 +74,14 @@ async function adminLogin(payload: AdminLoginInput) {
   };
 }
 
+/**
+ * Change an administrator's password.
+ *
+ * Verifies the current password before storing the new password hash.
+ *
+ * @param adminId - Admin ID from the decoded JWT
+ * @param payload - Current and new password values
+ */
 async function changePassword(
   adminId: number | undefined,
   payload: ChangePasswordInput,

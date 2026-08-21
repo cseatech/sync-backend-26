@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "../../db/index";
 import { users } from "../../db/schema";
-import {generateOTP,verifyOTP,getOTPToken} from "../../utils/OTP";
+import {generateOTP,verifyOTP,getOTPToken} from "../../utils/otp";
 import {
   signToken,
   verifyToken,
@@ -19,6 +19,14 @@ import {
 
 import { throwError } from "../../utils/serviceError";
 
+/**
+ * Authenticate a user and return an access token with profile data.
+ *
+ * Validates the supplied credentials against the users table,
+ * then creates a JWT for authenticated user requests.
+ *
+ * @param payload - User email and password
+ */
 async function login(payload: LoginInput) {
   const { email, password } = payload;
 
@@ -74,6 +82,15 @@ async function login(payload: LoginInput) {
   };
 }
 
+/**
+ * Get a user's profile by CSEA code.
+ *
+ * Allows administrators to view any profile and users to view
+ * only their own profile.
+ *
+ * @param cseaCode - CSEA code identifying the requested user
+ * @param requester - User or admin identity from the decoded JWT
+ */
 async function getProfileByCseaCode(
   cseaCode: string,
   requester:
@@ -138,6 +155,14 @@ async function getProfileByCseaCode(
   };
 }
 
+/**
+ * Change a user's password.
+ *
+ * Verifies the current password before storing the new password hash.
+ *
+ * @param userId - User ID from the decoded JWT
+ * @param payload - Current and new password values
+ */
 async function changePassword(
   userId: number | undefined,
   payload: ChangePasswordInput,
@@ -190,6 +215,14 @@ async function changePassword(
   };
 }
 
+/**
+ * Reset a user's password using a verified password-reset token.
+ *
+ * Rejects expired, invalid, or incorrectly scoped reset tokens
+ * before updating the user's password hash.
+ *
+ * @param payload - Password-reset token and new password
+ */
 async function forgetPassword(payload: ForgetPasswordInput) {
   const { reset_token, newPassword } = payload;
 
@@ -245,6 +278,14 @@ async function forgetPassword(payload: ForgetPasswordInput) {
     message: "Password reset successful",
   };
 }
+
+/**
+ * Generate and email a one-time password for password recovery.
+ *
+ * Returns a short-lived token containing the hashed OTP for later verification.
+ *
+ * @param email - Email address of the user requesting password recovery
+ */
 async function requestOTP(email: string) {
   const user = await db
     .select()
@@ -259,6 +300,16 @@ async function requestOTP(email: string) {
     await sendMail(email, " OTP for resetting password", `Your OTP code is: ${OTP}`);
     return OTPToken;
 }
+
+  /**
+   * Verify a submitted one-time password and issue a reset token.
+   *
+   * The returned reset token can be used to complete the password reset flow.
+   *
+   * @param email - Email address associated with the OTP
+   * @param OTP - One-time password submitted by the user
+   * @param token - OTP verification token returned by requestOTP
+   */
 async function verifyEnteredOTP(email: string, OTP: number | string, token: string) {
   const isValid = verifyOTP(String(OTP), email, token);
   if (!isValid) {
@@ -268,7 +319,7 @@ async function verifyEnteredOTP(email: string, OTP: number | string, token: stri
     email,
     scope: "password_reset"
   };
-  const resetToken = signToken(resetTokenPayload);
+  const resetToken = signToken(resetTokenPayload,"5m");
   return resetToken;
 }
 export default {

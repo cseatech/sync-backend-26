@@ -32,9 +32,12 @@ export interface OTPPayload extends DefaultJwtPayload {
 
 export  type AppJwtPayload = UserJwtPayload | AdminJwtPayload | PasswordResetJwtPayload | OTPPayload;
 
-export function signToken(payload: AppJwtPayload): string {
+export function signToken(
+  payload: AppJwtPayload,
+  expiresIn: SignOptions["expiresIn"] = "7d",
+): string {
   const options: SignOptions = {
-    expiresIn: "7d",
+    expiresIn,
   };
 
   return jwt.sign(payload, JWT_SECRET, options);
