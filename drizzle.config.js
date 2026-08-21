@@ -1,7 +1,7 @@
 const { defineConfig } = require("drizzle-kit");
 
 module.exports = defineConfig({
-  schema: "./src/db/schema.js",
+  schema: "./src/db/schema.ts",
   out: "./src/db/migrations",
   dialect: "postgresql",
   dbCredentials: {

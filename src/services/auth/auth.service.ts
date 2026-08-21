@@ -64,20 +64,19 @@ async function login(
     );
   }
 
-  // Remove comment for password validation
 
-  // const isPasswordValid =
-  //   await bcrypt.compare(
-  //     String(password),
-  //     user.password_hash
-  //   );
+  const isPasswordValid =
+    await bcrypt.compare(
+      String(password),
+      user.password_hash
+    );
 
-  // if (!isPasswordValid) {
-  //   throwError(
-  //     "Invalid email or password",
-  //     401
-  //   );
-  // }
+  if (!isPasswordValid) {
+    throwError(
+      "Invalid email or password",
+      401
+    );
+  }
 
   const tokenPayload: UserJwtPayload = {
     user_id: user.user_id,
@@ -92,7 +91,6 @@ async function login(
     token,
 
     user: {
-      // user_id: user.user_id,
       csea_code: user.csea_code,
       register_number:
         user.register_number,
@@ -103,9 +101,6 @@ async function login(
       department: user.department,
       year: user.year,
       gender: user.gender,
-
-      // created_at: user.created_at,
-      // updated_at: user.updated_at,
     },
   };
 }
@@ -272,7 +267,7 @@ async function changePassword(
   const hashedPassword =
     await bcrypt.hash(
       String(newPassword),
-      10
+      12
     );
 
   await db
@@ -385,7 +380,7 @@ async function forgetPassword(
   const hashedPassword =
     await bcrypt.hash(
       String(newPassword),
-      10
+      12
     );
 
   await db

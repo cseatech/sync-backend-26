@@ -61,20 +61,19 @@ async function adminLogin(
     );
   }
 
-  // Remove comment for password validation
 
-  // const isPasswordValid =
-  //   await bcrypt.compare(
-  //     String(password),
-  //     admin.password_hash
-  //   );
+  const isPasswordValid =
+    await bcrypt.compare(
+      String(password),
+      admin.password_hash
+    );
 
-  // if (!isPasswordValid) {
-  //   throwError(
-  //     "Invalid admin credentials",
-  //     401
-  //   );
-  // }
+  if (!isPasswordValid) {
+    throwError(
+      "Invalid admin credentials",
+      401
+    );
+  }
 
   const tokenPayload: AdminJwtPayload = {
     admin_id: admin.admin_id,
@@ -175,7 +174,7 @@ async function changePassword(
   const hashedPassword =
     await bcrypt.hash(
       String(newPassword),
-      10
+      12
     );
 
   await db
