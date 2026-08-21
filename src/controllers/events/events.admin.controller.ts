@@ -9,6 +9,8 @@ import {
   teamNoParamSchema,
 } from "../../validators/events.validator";
 
+import { handleControllerError } from "../../utils/controllerError";
+
 /**
  * GET /api/v1/admin/participant/:csea_code
  *
@@ -35,33 +37,7 @@ async function getParticipant(
 
     return;
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{
-          message?: string;
-        }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 
@@ -86,16 +62,7 @@ async function getAdminAssignedEvents(
 
     return;
   } catch (error: unknown) {
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 
@@ -123,33 +90,7 @@ async function getEventParticipants(
 
     return;
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{
-          message?: string;
-        }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 
@@ -185,33 +126,7 @@ async function addEventParticipants(
 
     return;
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{
-          message?: string;
-        }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 
@@ -244,33 +159,7 @@ async function removeEventParticipant(
 
     return;
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{
-          message?: string;
-        }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 
@@ -304,33 +193,7 @@ async function removeEventTeam(
 
     return;
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{
-          message?: string;
-        }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 

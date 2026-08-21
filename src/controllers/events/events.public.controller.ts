@@ -7,6 +7,8 @@ import {
   participantCseaCodeParamSchema,
 } from "../../validators/events.validator";
 
+import { handleControllerError } from "../../utils/controllerError";
+
 /**
  * GET /api/v1/events
  *
@@ -28,16 +30,7 @@ async function listAllEvents(
 
     return;
   } catch (error: unknown) {
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 
@@ -64,33 +57,7 @@ async function getEventDetails(
 
     return;
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{
-          message?: string;
-        }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 
@@ -113,7 +80,7 @@ async function getParticipantEvents(
 
     const data = await eventsPublicService.getRegisteredEventsByParticipant(
       params.csea_code,
-      req.user,
+      req.user!,
     );
 
     res.status(200).json({
@@ -123,33 +90,7 @@ async function getParticipantEvents(
 
     return;
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{
-          message?: string;
-        }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 

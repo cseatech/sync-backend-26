@@ -9,6 +9,8 @@ import {
   forgetPasswordSchema,
 } from "../../validators/auth.validator";
 
+import { handleControllerError } from "../../utils/controllerError";
+
 async function login(
   req: Request,
   res: Response,
@@ -26,31 +28,7 @@ async function login(
     });
 
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{ message?: string }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 
@@ -63,7 +41,7 @@ async function getProfile(
     const params = profileByCseaCodeSchema.parse(req.params || {});
     const profile = await authService.getProfileByCseaCode(
       params.csea_code,
-      req.user,
+      req.user!,
     );
 
     res.status(200).json({
@@ -71,31 +49,7 @@ async function getProfile(
       data: profile,
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{ message?: string }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 
@@ -114,31 +68,7 @@ async function changePassword(
       message: result.message,
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{ message?: string }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 
@@ -157,33 +87,10 @@ async function forgetPassword(
       message: result.message,
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{ message?: string }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
+
 async function getOTP(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { email } = req.body;
@@ -194,33 +101,10 @@ async function getOTP(req: Request, res: Response, next: NextFunction): Promise<
       token: OTPToken,
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{ message?: string }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
+
 async function verifyOTP(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { email, OTP, token } = req.body;
@@ -238,31 +122,7 @@ async function verifyOTP(req: Request, res: Response, next: NextFunction): Promi
       });
     }
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ZodError") {
-      const zodError = error as Error & {
-        issues?: Array<{ message?: string }>;
-      };
-
-      const message = zodError.issues?.[0]?.message || "Validation failed";
-
-      res.status(400).json({
-        success: false,
-        message,
-      });
-
-      return;
-    }
-
-    if (error instanceof Error && error.statusCode) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    handleControllerError(error, res, next);
   }
 }
 

@@ -6,9 +6,9 @@ import { events, round, eventParticipation, users } from "../../db/schema";
 
 import { throwError } from "../../utils/serviceError";
 
-import { UserJwtPayload, AdminJwtPayload } from "../../utils/jwt";
+import { AppJwtPayload } from "../../utils/jwt";
 
-type Requester = UserJwtPayload | AdminJwtPayload | undefined;
+type Requester = AppJwtPayload;
 
 /**
  * Fetch all events along with their rounds.

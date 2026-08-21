@@ -9,6 +9,7 @@ import {
   verifyToken,
   UserJwtPayload,
   PasswordResetJwtPayload,
+  AppJwtPayload,
 } from "../../utils/jwt";
 import {sendMail} from "../../utils/email";
 import {
@@ -93,12 +94,7 @@ async function login(payload: LoginInput) {
  */
 async function getProfileByCseaCode(
   cseaCode: string,
-  requester:
-    | UserJwtPayload
-    | {
-        user_id?: number;
-        role?: string;
-      } = {},
+  requester: AppJwtPayload
 ) {
   const normalizedCode = String(cseaCode || "").trim();
 
