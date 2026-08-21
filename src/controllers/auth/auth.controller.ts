@@ -1,8 +1,4 @@
-import {
-  Request,
-  Response,
-  NextFunction,
-} from "express";
+import { Request, Response, NextFunction } from "express";
 
 import authService from "../../services/auth/auth.service";
 
@@ -16,13 +12,11 @@ import {
 async function login(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const body = req.body || {};
-
     const parsed = loginSchema.parse(body);
-
     const result = await authService.login(parsed);
 
     res.status(200).json({
@@ -30,18 +24,14 @@ async function login(
       message: "Login successful",
       data: result,
     });
+
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.name === "ZodError"
-    ) {
+    if (error instanceof Error && error.name === "ZodError") {
       const zodError = error as Error & {
         issues?: Array<{ message?: string }>;
       };
 
-      const message =
-        zodError.issues?.[0]?.message ||
-        "Validation failed";
+      const message = zodError.issues?.[0]?.message || "Validation failed";
 
       res.status(400).json({
         success: false,
@@ -51,10 +41,7 @@ async function login(
       return;
     }
 
-    if (
-      error instanceof Error &&
-      error.statusCode
-    ) {
+    if (error instanceof Error && error.statusCode) {
       res.status(error.statusCode).json({
         success: false,
         message: error.message,
@@ -70,36 +57,26 @@ async function login(
 async function getProfile(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
-    const params =
-      profileByCseaCodeSchema.parse(
-        req.params || {}
-      );
-
-    const profile =
-      await authService.getProfileByCseaCode(
-        params.csea_code,
-        req.user
-      );
+    const params = profileByCseaCodeSchema.parse(req.params || {});
+    const profile = await authService.getProfileByCseaCode(
+      params.csea_code,
+      req.user,
+    );
 
     res.status(200).json({
       success: true,
       data: profile,
     });
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.name === "ZodError"
-    ) {
+    if (error instanceof Error && error.name === "ZodError") {
       const zodError = error as Error & {
         issues?: Array<{ message?: string }>;
       };
 
-      const message =
-        zodError.issues?.[0]?.message ||
-        "Validation failed";
+      const message = zodError.issues?.[0]?.message || "Validation failed";
 
       res.status(400).json({
         success: false,
@@ -109,10 +86,7 @@ async function getProfile(
       return;
     }
 
-    if (
-      error instanceof Error &&
-      error.statusCode
-    ) {
+    if (error instanceof Error && error.statusCode) {
       res.status(error.statusCode).json({
         success: false,
         message: error.message,
@@ -128,36 +102,24 @@ async function getProfile(
 async function changePassword(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const body = req.body || {};
-
-    const parsed =
-      changePasswordSchema.parse(body);
-
-    const result =
-      await authService.changePassword(
-        req.user?.user_id,
-        parsed
-      );
+    const parsed = changePasswordSchema.parse(body);
+    const result = await authService.changePassword(req.user?.user_id, parsed);
 
     res.status(200).json({
       success: true,
       message: result.message,
     });
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.name === "ZodError"
-    ) {
+    if (error instanceof Error && error.name === "ZodError") {
       const zodError = error as Error & {
         issues?: Array<{ message?: string }>;
       };
 
-      const message =
-        zodError.issues?.[0]?.message ||
-        "Validation failed";
+      const message = zodError.issues?.[0]?.message || "Validation failed";
 
       res.status(400).json({
         success: false,
@@ -167,10 +129,7 @@ async function changePassword(
       return;
     }
 
-    if (
-      error instanceof Error &&
-      error.statusCode
-    ) {
+    if (error instanceof Error && error.statusCode) {
       res.status(error.statusCode).json({
         success: false,
         message: error.message,
@@ -186,33 +145,24 @@ async function changePassword(
 async function forgetPassword(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const body = req.body || {};
-
-    const parsed =
-      forgetPasswordSchema.parse(body);
-
-    const result =
-      await authService.forgetPassword(parsed);
+    const parsed = forgetPasswordSchema.parse(body);
+    const result = await authService.forgetPassword(parsed);
 
     res.status(200).json({
       success: true,
       message: result.message,
     });
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.name === "ZodError"
-    ) {
+    if (error instanceof Error && error.name === "ZodError") {
       const zodError = error as Error & {
         issues?: Array<{ message?: string }>;
       };
 
-      const message =
-        zodError.issues?.[0]?.message ||
-        "Validation failed";
+      const message = zodError.issues?.[0]?.message || "Validation failed";
 
       res.status(400).json({
         success: false,
@@ -222,10 +172,7 @@ async function forgetPassword(
       return;
     }
 
-    if (
-      error instanceof Error &&
-      error.statusCode
-    ) {
+    if (error instanceof Error && error.statusCode) {
       res.status(error.statusCode).json({
         success: false,
         message: error.message,
@@ -238,9 +185,4 @@ async function forgetPassword(
   }
 }
 
-export {
-  login,
-  getProfile,
-  changePassword,
-  forgetPassword,
-};
+export { login, getProfile, changePassword, forgetPassword };

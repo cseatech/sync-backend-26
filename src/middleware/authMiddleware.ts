@@ -1,18 +1,8 @@
-import {
-  Request,
-  Response,
-  NextFunction,
-} from "express";
+import { Request, Response, NextFunction } from "express";
 
-import {
-  verifyToken,
-  UserJwtPayload,
-  AdminJwtPayload,
-} from "../utils/jwt";
+import { verifyToken, UserJwtPayload, AdminJwtPayload } from "../utils/jwt";
 
-type AuthenticatedUser =
-  | UserJwtPayload
-  | AdminJwtPayload;
+type AuthenticatedUser = UserJwtPayload | AdminJwtPayload;
 
 declare global {
   namespace Express {
@@ -25,14 +15,12 @@ declare global {
 async function protect(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const authHeader = req.headers.authorization || "";
 
-    const token = authHeader.startsWith("Bearer ")
-      ? authHeader.slice(7)
-      : null;
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
     if (!token) {
       res.status(401).json({
@@ -76,14 +64,8 @@ async function protect(
   }
 }
 
-function authorize(
-  ...allowedRoles: string[]
-) {
-  return (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): void => {
+function authorize(...allowedRoles: string[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({
         success: false,
@@ -93,20 +75,16 @@ function authorize(
       return;
     }
 
-    const userRole = String(
-      req.user.role || ""
-    ).toLowerCase();
+    const userRole = String(req.user.role || "").toLowerCase();
 
-    const normalizedAllowedRoles =
-      allowedRoles.map((role) =>
-        String(role).toLowerCase()
-      );
+    const normalizedAllowedRoles = allowedRoles.map((role) =>
+      String(role).toLowerCase(),
+    );
 
     if (!normalizedAllowedRoles.includes(userRole)) {
       res.status(403).json({
         success: false,
-        message:
-          "You do not have permission to access this resource",
+        message: "You do not have permission to access this resource",
       });
 
       return;
@@ -116,7 +94,4 @@ function authorize(
   };
 }
 
-export {
-  protect,
-  authorize,
-};
+export { protect, authorize };

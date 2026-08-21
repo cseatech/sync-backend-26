@@ -1,8 +1,4 @@
-import {
-  Request,
-  Response,
-  NextFunction,
-} from "express";
+import { Request, Response, NextFunction } from "express";
 
 declare global {
   interface Error {
@@ -10,10 +6,7 @@ declare global {
   }
 }
 
-function notFoundHandler(
-  req: Request,
-  res: Response
-): void {
+function notFoundHandler(req: Request, res: Response): void {
   res.status(404).json({
     success: false,
     message: "Route not found",
@@ -24,7 +17,7 @@ function errorHandler(
   err: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void {
   const statusCode = err.statusCode || 500;
 
@@ -34,12 +27,8 @@ function errorHandler(
 
   res.status(statusCode).json({
     success: false,
-    message:
-      err.message || "Internal server error",
+    message: err.message || "Internal server error",
   });
 }
 
-export {
-  notFoundHandler,
-  errorHandler,
-};
+export { notFoundHandler, errorHandler };

@@ -1,12 +1,6 @@
-import {
-  Request,
-  Response,
-  NextFunction,
-} from "express";
+import { Request, Response, NextFunction } from "express";
 
 import eventsPublicService from "../../services/events/events.public.service";
-
-
 
 import {
   eventIdParamSchema,
@@ -21,11 +15,10 @@ import {
 async function listAllEvents(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
-    const data =
-      await eventsPublicService.getAllEvents();
+    const data = await eventsPublicService.getAllEvents();
 
     res.status(200).json({
       success: true,
@@ -35,10 +28,7 @@ async function listAllEvents(
 
     return;
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.statusCode
-    ) {
+    if (error instanceof Error && error.statusCode) {
       res.status(error.statusCode).json({
         success: false,
         message: error.message,
@@ -60,18 +50,12 @@ async function listAllEvents(
 async function getEventDetails(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
-    const params =
-      eventIdParamSchema.parse(
-        req.params || {}
-      );
+    const params = eventIdParamSchema.parse(req.params || {});
 
-    const data =
-      await eventsPublicService.getEventById(
-        params.event_id
-      );
+    const data = await eventsPublicService.getEventById(params.event_id);
 
     res.status(200).json({
       success: true,
@@ -80,19 +64,14 @@ async function getEventDetails(
 
     return;
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.name === "ZodError"
-    ) {
+    if (error instanceof Error && error.name === "ZodError") {
       const zodError = error as Error & {
         issues?: Array<{
           message?: string;
         }>;
       };
 
-      const message =
-        zodError.issues?.[0]?.message ||
-        "Validation failed";
+      const message = zodError.issues?.[0]?.message || "Validation failed";
 
       res.status(400).json({
         success: false,
@@ -102,10 +81,7 @@ async function getEventDetails(
       return;
     }
 
-    if (
-      error instanceof Error &&
-      error.statusCode
-    ) {
+    if (error instanceof Error && error.statusCode) {
       res.status(error.statusCode).json({
         success: false,
         message: error.message,
@@ -130,20 +106,15 @@ async function getEventDetails(
 async function getParticipantEvents(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
-    const params =
-      participantCseaCodeParamSchema.parse(
-        req.params || {}
-      );
+    const params = participantCseaCodeParamSchema.parse(req.params || {});
 
-    const data =
-      await eventsPublicService
-        .getRegisteredEventsByParticipant(
-          params.csea_code,
-          req.user
-        );
+    const data = await eventsPublicService.getRegisteredEventsByParticipant(
+      params.csea_code,
+      req.user,
+    );
 
     res.status(200).json({
       success: true,
@@ -152,19 +123,14 @@ async function getParticipantEvents(
 
     return;
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.name === "ZodError"
-    ) {
+    if (error instanceof Error && error.name === "ZodError") {
       const zodError = error as Error & {
         issues?: Array<{
           message?: string;
         }>;
       };
 
-      const message =
-        zodError.issues?.[0]?.message ||
-        "Validation failed";
+      const message = zodError.issues?.[0]?.message || "Validation failed";
 
       res.status(400).json({
         success: false,
@@ -174,10 +140,7 @@ async function getParticipantEvents(
       return;
     }
 
-    if (
-      error instanceof Error &&
-      error.statusCode
-    ) {
+    if (error instanceof Error && error.statusCode) {
       res.status(error.statusCode).json({
         success: false,
         message: error.message,
@@ -190,8 +153,4 @@ async function getParticipantEvents(
   }
 }
 
-export {
-  listAllEvents,
-  getEventDetails,
-  getParticipantEvents,
-};
+export { listAllEvents, getEventDetails, getParticipantEvents };

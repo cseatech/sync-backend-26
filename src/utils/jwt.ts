@@ -3,8 +3,7 @@ import jwt, {
   SignOptions,
 } from "jsonwebtoken";
 
-const JWT_SECRET =
-  process.env.JWT_SECRET || "change_me_in_production";
+const JWT_SECRET = process.env.JWT_SECRET || "change_me_in_production";
 
 export interface UserJwtPayload extends DefaultJwtPayload {
   user_id: number;
@@ -30,13 +29,9 @@ export interface OtpPayload extends DefaultJwtPayload {
 }
 
 export type AppJwtPayload =
-  | UserJwtPayload
-  | AdminJwtPayload
-  | PasswordResetJwtPayload;
+  UserJwtPayload | AdminJwtPayload | PasswordResetJwtPayload;
 
-export function signToken(
-  payload: AppJwtPayload
-): string {
+export function signToken(payload: AppJwtPayload): string {
   const options: SignOptions = {
     expiresIn: "7d",
   };
@@ -44,9 +39,7 @@ export function signToken(
   return jwt.sign(payload, JWT_SECRET, options);
 }
 
-export function verifyToken(
-  token: string
-): AppJwtPayload {
+export function verifyToken(token: string): AppJwtPayload {
   const decoded = jwt.verify(token, JWT_SECRET);
 
   if (typeof decoded === "string") {

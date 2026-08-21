@@ -4,16 +4,11 @@
  * @param message - Error message
  * @param statusCode - HTTP status code
  */
-function throwError(
-  message: string,
-  statusCode: number
-): never {
+function throwError(message: string, statusCode: number): never {
   const error = new Error(message);
   error.statusCode = statusCode;
 
   throw error;
 }
 
-export {
-  throwError,
-};
+export { throwError };

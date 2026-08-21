@@ -1,8 +1,4 @@
-import {
-  Request,
-  Response,
-  NextFunction,
-} from "express";
+import { Request, Response, NextFunction } from "express";
 
 import adminService from "../../services/admin/admin.service";
 
@@ -14,39 +10,29 @@ import {
 async function adminLogin(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const body = req.body || {};
-
-    const parsed =
-      adminLoginSchema.parse(body);
-
-    const result =
-      await adminService.adminLogin(parsed);
+    const parsed = adminLoginSchema.parse(body);
+    const result = await adminService.adminLogin(parsed);
 
     res.status(200).json({
       success: true,
-      message:
-        "Admin login successful",
+      message: "Admin login successful",
       data: result,
     });
 
     return;
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.name === "ZodError"
-    ) {
+    if (error instanceof Error && error.name === "ZodError") {
       const zodError = error as Error & {
         issues?: Array<{
           message?: string;
         }>;
       };
 
-      const message =
-        zodError.issues?.[0]?.message ||
-        "Validation failed";
+      const message = zodError.issues?.[0]?.message || "Validation failed";
 
       res.status(400).json({
         success: false,
@@ -56,15 +42,11 @@ async function adminLogin(
       return;
     }
 
-    if (
-      error instanceof Error &&
-      error.statusCode
-    ) {
+    if (error instanceof Error && error.statusCode) {
       res.status(error.statusCode).json({
         success: false,
         message: error.message,
       });
-
       return;
     }
 
@@ -75,41 +57,31 @@ async function adminLogin(
 async function changePassword(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const body = req.body || {};
-
-    const parsed =
-      changePasswordSchema.parse(body);
-
-    const result =
-      await adminService.changePassword(
-        req.user?.admin_id,
-        parsed
-      );
+    const parsed = changePasswordSchema.parse(body);
+    const result = await adminService.changePassword(
+      req.user?.admin_id,
+      parsed,
+    );
 
     res.status(200).json({
       success: true,
       message: result.message,
     });
-
     return;
+
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.name === "ZodError"
-    ) {
+    if (error instanceof Error && error.name === "ZodError") {
       const zodError = error as Error & {
         issues?: Array<{
           message?: string;
         }>;
       };
 
-      const message =
-        zodError.issues?.[0]?.message ||
-        "Validation failed";
-
+      const message = zodError.issues?.[0]?.message || "Validation failed";
       res.status(400).json({
         success: false,
         message,
@@ -118,10 +90,7 @@ async function changePassword(
       return;
     }
 
-    if (
-      error instanceof Error &&
-      error.statusCode
-    ) {
+    if (error instanceof Error && error.statusCode) {
       res.status(error.statusCode).json({
         success: false,
         message: error.message,
@@ -134,7 +103,4 @@ async function changePassword(
   }
 }
 
-export {
-  adminLogin,
-  changePassword,
-};
+export { adminLogin, changePassword };

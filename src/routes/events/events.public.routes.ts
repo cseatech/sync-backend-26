@@ -6,18 +6,12 @@ import {
   getParticipantEvents,
 } from "../../controllers/events/events.public.controller";
 
-import {
-  protect,
-  authorize,
-} from "../../middleware/authMiddleware";
+import { protect, authorize } from "../../middleware/authMiddleware";
 
 const router = express.Router();
 
 // GET /api/v1/events — public, no auth required
-router.get(
-  "/events",
-  listAllEvents
-);
+router.get("/events", listAllEvents);
 
 // GET /api/v1/events/participant/:csea_code
 // Must come BEFORE /:event_id so Express doesn't
@@ -26,13 +20,10 @@ router.get(
   "/events/participant/:csea_code",
   protect,
   authorize("user", "admin"),
-  getParticipantEvents
+  getParticipantEvents,
 );
 
 // GET /api/v1/events/:event_id — public, no auth required
-router.get(
-  "/events/:event_id",
-  getEventDetails
-);
+router.get("/events/:event_id", getEventDetails);
 
 export default router;

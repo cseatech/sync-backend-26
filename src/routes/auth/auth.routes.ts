@@ -7,47 +7,28 @@ import {
   forgetPassword,
 } from "../../controllers/auth/auth.controller";
 
-import {
-  protect,
-  authorize,
-} from "../../middleware/authMiddleware";
+import { protect, authorize } from "../../middleware/authMiddleware";
 
 const router = express.Router();
 
-router.post(
-  "/auth/login",
-  login
-);
+router.post("/auth/login", login);
 
-router.post(
-  "/auth/changePassword",
-  protect,
-  authorize("user"),
-  changePassword
-);
+router.post("/auth/changePassword", protect, authorize("user"), changePassword);
 
-router.post(
-  "/auth/forgetPassword",
-  forgetPassword
-);
+router.post("/auth/forgetPassword", forgetPassword);
 
 router.get(
   "/auth/profile/:csea_code",
   protect,
   authorize("user", "admin"),
-  getProfile
+  getProfile,
 );
 
-router.get(
-  "/auth/me",
-  protect,
-  authorize("user"),
-  (req, res) => {
-    res.status(200).json({
-      success: true,
-      user: req.user,
-    });
-  }
-);
+router.get("/auth/me", protect, authorize("user"), (req, res) => {
+  res.status(200).json({
+    success: true,
+    user: req.user,
+  });
+});
 
 export default router;

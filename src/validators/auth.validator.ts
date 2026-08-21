@@ -1,17 +1,12 @@
 import { z } from "zod";
 
 const loginSchema = z.object({
-  email: z.email("Invalid email format"),  
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters long"),
+  email: z.email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 6 characters long"),
 });
 
 const profileByCseaCodeSchema = z.object({
-  csea_code: z
-    .string()
-    .trim()
-    .min(1, "CSEA code is required"),
+  csea_code: z.string().trim().min(1, "CSEA code is required"),
 });
 
 const changePasswordSchema = z.object({
@@ -25,9 +20,7 @@ const changePasswordSchema = z.object({
 });
 
 const forgetPasswordSchema = z.object({
-  reset_token: z
-    .string()
-    .min(1, "Reset token is required"),
+  reset_token: z.string().min(1, "Reset token is required"),
 
   newPassword: z
     .string()
@@ -35,10 +28,7 @@ const forgetPasswordSchema = z.object({
 });
 
 const adminLoginSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .email("Invalid admin email format"),
+  email: z.string().trim().email("Invalid admin email format"),
 
   password: z
     .string()
@@ -47,17 +37,13 @@ const adminLoginSchema = z.object({
 
 type LoginInput = z.infer<typeof loginSchema>;
 
-type ProfileByCseaCodeInput =
-  z.infer<typeof profileByCseaCodeSchema>;
+type ProfileByCseaCodeInput = z.infer<typeof profileByCseaCodeSchema>;
 
-type ChangePasswordInput =
-  z.infer<typeof changePasswordSchema>;
+type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
-type ForgetPasswordInput =
-  z.infer<typeof forgetPasswordSchema>;
+type ForgetPasswordInput = z.infer<typeof forgetPasswordSchema>;
 
-type AdminLoginInput =
-  z.infer<typeof adminLoginSchema>;
+type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 
 export {
   loginSchema,
@@ -65,7 +51,6 @@ export {
   changePasswordSchema,
   forgetPasswordSchema,
   adminLoginSchema,
-
   LoginInput,
   ProfileByCseaCodeInput,
   ChangePasswordInput,

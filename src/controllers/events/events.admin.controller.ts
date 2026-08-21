@@ -1,14 +1,8 @@
-import {
-  Request,
-  Response,
-  NextFunction,
-} from "express";
+import { Request, Response, NextFunction } from "express";
 
 import eventsAdminService from "../../services/events/events.admin.service";
 
-import {
-  participantCseaCodeParamSchema,
-} from "../../validators/events.validator";
+import { participantCseaCodeParamSchema } from "../../validators/events.validator";
 
 /**
  * GET /api/v1/admin/participant/:csea_code
@@ -21,18 +15,13 @@ import {
 async function getParticipant(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
-    const params =
-      participantCseaCodeParamSchema.parse(
-        req.params || {}
-      );
-
-    const data =
-      await eventsAdminService.getParticipantByCseaCode(
-        params.csea_code
-      );
+    const params = participantCseaCodeParamSchema.parse(req.params || {});
+    const data = await eventsAdminService.getParticipantByCseaCode(
+      params.csea_code,
+    );
 
     res.status(200).json({
       success: true,
@@ -41,19 +30,14 @@ async function getParticipant(
 
     return;
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.name === "ZodError"
-    ) {
+    if (error instanceof Error && error.name === "ZodError") {
       const zodError = error as Error & {
         issues?: Array<{
           message?: string;
         }>;
       };
 
-      const message =
-        zodError.issues?.[0]?.message ||
-        "Validation failed";
+      const message = zodError.issues?.[0]?.message || "Validation failed";
 
       res.status(400).json({
         success: false,
@@ -63,10 +47,7 @@ async function getParticipant(
       return;
     }
 
-    if (
-      error instanceof Error &&
-      error.statusCode
-    ) {
+    if (error instanceof Error && error.statusCode) {
       res.status(error.statusCode).json({
         success: false,
         message: error.message,
@@ -88,13 +69,10 @@ async function getParticipant(
 async function getAdminAssignedEvents(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
-    const data =
-      await eventsAdminService.getAssignedEvents(
-        req.user?.admin_id
-      );
+    const data = await eventsAdminService.getAssignedEvents(req.user?.admin_id);
 
     res.status(200).json({
       success: true,
@@ -103,10 +81,7 @@ async function getAdminAssignedEvents(
 
     return;
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.statusCode
-    ) {
+    if (error instanceof Error && error.statusCode) {
       res.status(error.statusCode).json({
         success: false,
         message: error.message,
@@ -119,7 +94,4 @@ async function getAdminAssignedEvents(
   }
 }
 
-export {
-  getParticipant,
-  getAdminAssignedEvents,
-};
+export { getParticipant, getAdminAssignedEvents };

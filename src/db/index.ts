@@ -38,7 +38,4 @@ const db = drizzle(pool, {
   },
 });
 
-export {
-  db,
-  pool,
-};
+export { db, pool };
