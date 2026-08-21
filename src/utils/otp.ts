@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import type { StringValue } from "ms";
+import type { OtpPayload } from "./jwt";
 
 const SERVER_SECRET =
   process.env.SERVER_SECRET ||
@@ -10,13 +11,6 @@ const SERVER_SECRET =
 const OTP_EXPIRES_IN: StringValue =
   (process.env.OTP_EXPIRES_IN ||
     "10m") as StringValue;
-
-interface OtpPayload {
-  email: string;
-  otpHash: string;
-  iat?: number;
-  exp?: number;
-}
 
 function generateOTP(): number {
   return crypto.randomInt(

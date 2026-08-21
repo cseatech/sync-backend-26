@@ -3,10 +3,10 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 
-import authRoutes from "./routes/auth/auth.routes";
-import adminRoutes from "./routes/admin/admin.routes";
-import eventsPublicRoutes from "./routes/events/events.public.routes";
-import eventsAdminRoutes from "./routes/events/events.admin.routes";
+import authRoutes from "./Routes/auth/auth.routes";
+import adminRoutes from "./Routes/admin/admin.routes";
+import eventsPublicRoutes from "./Routes/events/events.public.routes";
+import eventsAdminRoutes from "./Routes/events/events.admin.routes";
 
 import {
   notFoundHandler,

@@ -24,6 +24,11 @@ export interface PasswordResetJwtPayload extends DefaultJwtPayload {
   scope: "password_reset";
 }
 
+export interface OtpPayload extends DefaultJwtPayload {
+  email: string;
+  otpHash: string;
+}
+
 export type AppJwtPayload =
   | UserJwtPayload
   | AdminJwtPayload
