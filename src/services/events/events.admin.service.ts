@@ -1,4 +1,4 @@
-import { eq, sql, inArray } from "drizzle-orm";
+import { eq, sql, inArray, and } from "drizzle-orm";
 
 import { db } from "../../db/index";
 
@@ -66,40 +66,21 @@ async function getAssignedEvents(adminId: number | undefined) {
     throwError("Admin not found", 404);
   }
 
-  const accessRows = await db
-    .select()
+  // Joins adminAccess → events, filtered by this admin
+  const assignedEvents = await db
+    .select({
+      event_id: events.event_id,
+      event_name: events.event_name,
+      description: events.description,
+      max_team_size: events.max_team_size,
+      event_type: events.event_type,
+      prize: events.prize,
+      contact: events.contact,
+      access_granted_at: adminAccess.access_granted_at,
+    })
     .from(adminAccess)
+    .innerJoin(events, eq(adminAccess.event_id, events.event_id))
     .where(eq(adminAccess.admin_id, Number(adminId)));
-
-  if (!accessRows || accessRows.length === 0) {
-    return {
-      admin: {
-        admin_id: admin.admin_id,
-        name: admin.name,
-      },
-
-      assigned_events: [],
-    };
-  }
-
-  const assignedEventIds = accessRows.map((row) => row.event_id);
-
-  // Fetch all events and filter only the events assigned to this admin.
-  const allEvents = await db.select().from(events);
-
-  const assignedEvents = allEvents.filter((event) =>
-    assignedEventIds.includes(event.event_id),
-  );
-
-  // Attach access metadata.
-  const enriched = assignedEvents.map((event) => {
-    const access = accessRows.find((row) => row.event_id === event.event_id);
-
-    return {
-      ...event,
-      access_granted_at: access?.access_granted_at ?? null,
-    };
-  });
 
   return {
     admin: {
@@ -107,7 +88,7 @@ async function getAssignedEvents(adminId: number | undefined) {
       name: admin.name,
     },
 
-    assigned_events: enriched,
+    assigned_events: assignedEvents,
   };
 }
 
@@ -133,26 +114,8 @@ async function getEventParticipants(eventId: number | string) {
 
   if (!event) throwError("Event not found", 404);
 
-  // Fetch participation rows for this event
-  const participationRows = await db
-    .select()
-    .from(eventParticipation)
-    .where(eq(eventParticipation.event_id, parsedId));
-
-  if (!participationRows || participationRows.length === 0) {
-    return {
-      event: { event_id: event.event_id, event_name: event.event_name },
-      participants: [],
-    };
-  }
-
-  // Fetch user details for each participant
-  const participantUserIds = participationRows.map((p) => p.user_id);
-
-
-  // use inArray() where condition to filter directly without getting all users
-  // apply same logic wherever applicable
-  const allUsers = await db
+  // Joins eventParticipation → users, filtered by event_id
+  const participants = await db
     .select({
       user_id: users.user_id,
       csea_code: users.csea_code,
@@ -164,29 +127,16 @@ async function getEventParticipants(eventId: number | string) {
       department: users.department,
       year: users.year,
       gender: users.gender,
+      team_no: eventParticipation.team_no,
+      registered_at: eventParticipation.created_at,
     })
-    .from(users);
-
-  const participantUsers = allUsers.filter((u) =>
-    participantUserIds.includes(u.user_id),
-  );
-
-  // Merge participation metadata with user details
-  const enriched = participantUsers.map((user) => {
-    const participation = participationRows.find(
-      (p) => p.user_id === user.user_id,
-    );
-
-    return {
-      ...user,
-      team_no: participation?.team_no ?? null,
-      registered_at: participation?.created_at ?? null,
-    };
-  });
+    .from(eventParticipation)
+    .innerJoin(users, eq(eventParticipation.user_id, users.user_id))
+    .where(eq(eventParticipation.event_id, parsedId));
 
   return {
     event: { event_id: event.event_id, event_name: event.event_name },
-    participants: enriched,
+    participants,
   };
 }
 
@@ -231,38 +181,43 @@ async function addTeamParticipants(
     );
   }
 
-  // Resolve each csea_code to a user record
-  const allUsers = await db
+  // Resolve each csea_code to a user record in a single inArray query
+  const resolvedParticipants = await db
     .select({
       user_id: users.user_id,
       csea_code: users.csea_code,
       full_name: users.full_name,
     })
-    .from(users);
+    .from(users)
+    .where(inArray(users.csea_code, cseaCodes));
 
-  const resolvedParticipants = cseaCodes.map((code) => {
-    const user = allUsers.find((u) => u.csea_code === code);
-
-    if (!user) throwError(`No user found with CSEA code: ${code}`, 404);
-
-    return user!;
-  });
+  // Ensure every requested code was found
+  for (const code of cseaCodes) {
+    if (!resolvedParticipants.find((u) => u.csea_code === code)) {
+      throwError(`No user found with CSEA code: ${code}`, 404);
+    }
+  }
 
   // Guard against duplicate registrations
   const existingRows = await db
     .select({ user_id: eventParticipation.user_id })
     .from(eventParticipation)
-    .where(eq(eventParticipation.event_id, parsedId));
+    .where(
+      and(
+        eq(eventParticipation.event_id, parsedId),
+        inArray(eventParticipation.user_id, resolvedParticipants.map((p) => p.user_id)),
+      ),
+    );
 
-  const existingUserIds = existingRows.map((r) => r.user_id);
-
-  for (const participant of resolvedParticipants) {
-    if (existingUserIds.includes(participant.user_id)) {
-      throwError(
-        `Participant ${participant.csea_code} is already registered for this event`,
-        409,
-      );
-    }
+  if (existingRows.length > 0) {
+    const alreadyRegistered = resolvedParticipants
+      .filter((p) => existingRows.find((r) => r.user_id === p.user_id))
+      .map((p) => p.csea_code)
+      .join(", ");
+    throwError(
+      `Participant(s) already registered for this event: ${alreadyRegistered}`,
+      409,
+    );
   }
 
   // Obtain a new team number from the DB sequence
@@ -338,12 +293,15 @@ async function removeParticipant(
 
   if (!user) throwError("No user found with the given CSEA code", 404);
 
-  // Verify the participant is actually registered for this event
+  // Verify the participant is registered AND fetch participation row in one query
   const [participation] = await db
     .select()
     .from(eventParticipation)
     .where(
-      sql`${eventParticipation.event_id} = ${parsedId} AND ${eventParticipation.user_id} = ${user.user_id}`,
+      and(
+        eq(eventParticipation.event_id, parsedId),
+        eq(eventParticipation.user_id, user.user_id),
+      ),
     )
     .limit(1);
 
@@ -370,7 +328,10 @@ async function removeParticipant(
   await db
     .delete(eventParticipation)
     .where(
-      sql`${eventParticipation.event_id} = ${parsedId} AND ${eventParticipation.user_id} = ${user.user_id}`,
+      and(
+        eq(eventParticipation.event_id, parsedId),
+        eq(eventParticipation.user_id, user.user_id),
+      ),
     );
 
   return {
@@ -420,7 +381,10 @@ async function removeTeam(
     .select()
     .from(eventParticipation)
     .where(
-      sql`${eventParticipation.event_id} = ${parsedEventId} AND ${eventParticipation.team_no} = ${parsedTeamNo}`,
+      and(
+        eq(eventParticipation.event_id, parsedEventId),
+        eq(eventParticipation.team_no, parsedTeamNo),
+      ),
     );
 
   if (!teamRows || teamRows.length === 0) {
@@ -450,7 +414,10 @@ async function removeTeam(
   await db
     .delete(eventParticipation)
     .where(
-      sql`${eventParticipation.event_id} = ${parsedEventId} AND ${eventParticipation.user_id} IN ${sql.raw(`(${teamUserIds.join(",")})`)}`,
+      and(
+        eq(eventParticipation.event_id, parsedEventId),
+        inArray(eventParticipation.user_id, teamUserIds),
+      ),
     );
 
   // Fetch user details for the response
