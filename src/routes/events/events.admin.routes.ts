@@ -13,28 +13,27 @@ import { protect, authorize } from "../../middleware/authMiddleware";
 
 const router = express.Router();
 
-// All routes below are admin-only
-router.use(protect, authorize("admin"));
+const adminAuth = [protect, authorize("admin")];
 
 // GET /api/v1/admin/participant/:csea_code
-router.get("/admin/participant/:csea_code", getParticipant);
+router.get("/admin/participant/:csea_code", adminAuth, getParticipant);
 
 // Must be registered BEFORE /admin/events to avoid
 // ":event_id" consuming the literal "participant" segment
 // GET /api/v1/admin/events/:event_id/participants
-router.get("/admin/events/:event_id/participants", getEventParticipants);
+router.get("/admin/events/:event_id/participants", adminAuth, getEventParticipants);
 
 // POST /api/v1/admin/events/:event_id/participants
-router.post("/admin/events/:event_id/participants", addEventParticipants);
+router.post("/admin/events/:event_id/participants", adminAuth, addEventParticipants);
 
 // GET /api/v1/admin/events
-router.get("/admin/events", getAdminAssignedEvents);
+router.get("/admin/events", adminAuth, getAdminAssignedEvents);
 
 // DELETE /api/v1/admin/events/:event_id/participant
 // csea_code is in the request body
-router.delete("/admin/events/:event_id/participant", removeEventParticipant);
+router.delete("/admin/events/:event_id/participant", adminAuth, removeEventParticipant);
 
 // DELETE /api/v1/admin/events/:event_id/team/:team_no
-router.delete("/admin/events/:event_id/team/:team_no", removeEventTeam);
+router.delete("/admin/events/:event_id/team/:team_no", adminAuth, removeEventTeam);
 
 export default router;

@@ -302,10 +302,6 @@ const winners = pgTable(
     awarded_at: timestamp("awarded_at", {
       withTimezone: true,
     }),
-
-    awarded_by: bigint("awarded_by", {
-      mode: "number",
-    }).notNull(),
   },
 
   (table) => ({
@@ -327,14 +323,6 @@ const winners = pgTable(
       foreignColumns: [users.user_id],
 
       name: "winners_user_id_fkey",
-    }),
-
-    awardedByFk: foreignKey({
-      columns: [table.awarded_by],
-
-      foreignColumns: [admins.admin_id],
-
-      name: "winners_awarded_by_fkey",
     }),
   }),
 );

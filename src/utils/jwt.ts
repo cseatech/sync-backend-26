@@ -29,8 +29,16 @@ export interface OTPPayload extends DefaultJwtPayload {
   OTPHash: string;
 }
 
+export interface CertificateAdminJwtPayload extends DefaultJwtPayload {
+  role: "certificate_admin";
+}
 
-export  type AppJwtPayload = UserJwtPayload | AdminJwtPayload | PasswordResetJwtPayload | OTPPayload;
+export type AppJwtPayload =
+  | UserJwtPayload
+  | AdminJwtPayload
+  | PasswordResetJwtPayload
+  | OTPPayload
+  | CertificateAdminJwtPayload;
 
 export function signToken(
   payload: AppJwtPayload,
@@ -51,4 +59,34 @@ export function verifyToken(token: string): AppJwtPayload {
   }
 
   return decoded as AppJwtPayload;
+}
+
+// ── Certificate Admin — uses its own isolated secret ─────────────────────────
+
+const CERTIFICATE_JWT_SECRET =
+  process.env.CERTIFICATE_ADMIN_JWT_SECRET ||
+  process.env.JWT_SECRET ||
+  "change_me_in_production";
+
+export function signCertificateToken(
+  payload: CertificateAdminJwtPayload,
+  expiresIn: SignOptions["expiresIn"] = "3d",
+): string {
+  return jwt.sign(payload, CERTIFICATE_JWT_SECRET, { expiresIn });
+}
+
+export function verifyCertificateToken(token: string): CertificateAdminJwtPayload {
+  const decoded = jwt.verify(token, CERTIFICATE_JWT_SECRET);
+
+  if (typeof decoded === "string") {
+    throwError("Invalid certificate admin token", 401);
+  }
+
+  const payload = decoded as CertificateAdminJwtPayload;
+
+  if (payload.role !== "certificate_admin") {
+    throwError("Token does not have certificate_admin role", 403);
+  }
+
+  return payload;
 }
