@@ -11,6 +11,8 @@ import {
   CertificateLoginInput,
   CertificateInsertWinnerInput,
 } from "../../validators/certificate.validator";
+import { register } from "module";
+import { email } from "zod";
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
@@ -24,9 +26,9 @@ import {
  */
 async function login(payload: CertificateLoginInput): Promise<{ token: string }> {
   const expectedUsername =
-    process.env.CERTIFICATE_ADMIN_USERNAME || "admin";
+    process.env.CERTIFICATE_ADMIN_USERNAME || "CSEA_OB";
   const expectedPassword =
-    process.env.CERTIFICATE_ADMIN_PASSWORD || "admin123";
+    process.env.CERTIFICATE_ADMIN_PASSWORD || "cseasyncob";
 
   const usernameMatch = payload.username === expectedUsername;
   const passwordMatch = payload.password === expectedPassword;
@@ -129,6 +131,9 @@ async function getAllWinners() {
       csea_code: users.csea_code,
       full_name: users.full_name,
       position: winners.position,
+      register_number: users.register_number,
+      phone: users.phone,
+      email: users.email,
       awarded_at: winners.awarded_at,
     })
     .from(winners)

@@ -7,8 +7,11 @@ import authRoutes from "./routes/auth/auth.routes";
 import adminRoutes from "./routes/admin/admin.routes";
 import eventsPublicRoutes from "./routes/events/events.public.routes";
 import eventsAdminRoutes from "./routes/events/events.admin.routes";
-import certificateAdminRoutes from "./routes/admin/certificate.admin.routes";
-import certificatePublicRoutes from "./routes/public/certificate.public.routes";
+import eventsSuperadminRoutes from "./routes/events/events.superadmin.routes";
+import certificateAdminRoutes from "./routes/certificate/certificate.admin.routes";
+import certificatePublicRoutes from "./routes/certificate/certificate.public.routes";
+
+
 
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
 
@@ -52,8 +55,10 @@ app.use("/api/v1", authRoutes);
 app.use("/api/v1", adminRoutes);
 app.use("/api/v1", eventsPublicRoutes);
 app.use("/api/v1", eventsAdminRoutes);
+app.use("/api/v1", eventsSuperadminRoutes);
 app.use("/api/v1", certificateAdminRoutes);
 app.use("/api/v1", certificatePublicRoutes);
+
 
 app.use(notFoundHandler);
 app.use(errorHandler);

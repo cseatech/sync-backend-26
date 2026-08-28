@@ -6,7 +6,7 @@ import {
   certificateLogin,
   addWinner,
   listWinners,
-} from "../../controllers/admin/certificate.admin.controller";
+} from "../../controllers/certificate/certificate.admin.controller";
 
 const router = express.Router();
 

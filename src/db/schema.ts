@@ -79,7 +79,7 @@ const users = pgTable("users", {
 });
 
 const admins = pgTable("admins", {
-  admin_id: bigint("admin_id", {
+  admin_id: bigserial("admin_id", {
     mode: "number",
   }).primaryKey(),
 

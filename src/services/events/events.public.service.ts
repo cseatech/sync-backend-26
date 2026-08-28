@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 import { db } from "../../db/index";
 
@@ -20,7 +20,13 @@ async function getAllEvents() {
     return [];
   }
 
-  const allRounds = await db.select().from(round);
+  // Fetch only the rounds that belong to the events we just loaded
+  const eventIds = allEvents.map((e) => e.event_id);
+
+  const allRounds = await db
+    .select()
+    .from(round)
+    .where(inArray(round.event_id, eventIds));
 
   const eventsWithRounds = allEvents.map((event) => ({
     ...event,
@@ -114,61 +120,31 @@ async function getRegisteredEventsByParticipant(
     );
   }
 
-  // Fetch participation rows for this user.
-  const participationRows = await db
-    .select()
+  // Joins eventParticipation → events, filtered by this user's user_id
+  const registeredEvents = await db
+    .select({
+      event_id: events.event_id,
+      event_name: events.event_name,
+      description: events.description,
+      max_team_size: events.max_team_size,
+      event_type: events.event_type,
+      prize: events.prize,
+      contact: events.contact,
+      team_no: eventParticipation.team_no,
+      registered_at: eventParticipation.created_at,
+    })
     .from(eventParticipation)
+    .innerJoin(events, eq(eventParticipation.event_id, events.event_id))
     .where(eq(eventParticipation.user_id, participant.user_id));
-
-  if (!participationRows || participationRows.length === 0) {
-    return {
-      participant: {
-        csea_code: participant.csea_code,
-
-        full_name: participant.full_name,
-
-        register_number: participant.register_number,
-      },
-
-      registered_events: [],
-    };
-  }
-
-  // Collect event IDs registered by this user.
-  const registeredEventIds = participationRows.map((p) => p.event_id);
-
-  // Fetch all events and filter only the ones this user is registered for.
-  const allEvents = await db.select().from(events);
-
-  const registeredEvents = allEvents.filter((event) =>
-    registeredEventIds.includes(event.event_id),
-  );
-
-  // Attach participation metadata to each event.
-  const enriched = registeredEvents.map((event) => {
-    const participation = participationRows.find(
-      (p) => p.event_id === event.event_id,
-    );
-
-    return {
-      ...event,
-
-      team_no: participation?.team_no ?? null,
-
-      registered_at: participation?.created_at ?? null,
-    };
-  });
 
   return {
     participant: {
       csea_code: participant.csea_code,
-
       full_name: participant.full_name,
-
       register_number: participant.register_number,
     },
 
-    registered_events: enriched,
+    registered_events: registeredEvents,
   };
 }
 

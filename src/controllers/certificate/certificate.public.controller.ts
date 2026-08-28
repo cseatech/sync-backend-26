@@ -3,9 +3,9 @@ import { Request, Response, NextFunction } from "express";
 import {
   getUserCertificates,
   verifyAndGetWinnerData,
-} from "../../services/public/certificate.public.service";
+} from "../../services/certificate/certificate.public.service";
 
-import { streamCertificate } from "../../services/public/pdf.service";
+import { streamCertificate } from "../../services/certificate/pdf.service";
 
 import {
   getCertificatesByCodeParamsSchema,
