@@ -1,8 +1,8 @@
 import {
   pgTable,
   pgEnum,
-  bigint,
   bigserial,
+  bigint,
   boolean,
   date,
   integer,
@@ -29,13 +29,13 @@ const adminPositionEnum = pgEnum("admin_position", [
 const eventTypeEnum = pgEnum("event_type", ["Tech", "Non-Tech"]);
 
 const users = pgTable("users", {
-  user_id: bigint("user_id", {
+  user_id: bigserial("user_id", {
     mode: "number",
   }).primaryKey(),
 
   csea_code: varchar("csea_code", {
-    length: 50,
-  }),
+    length: 6,
+  }).unique(),
 
   register_number: varchar("register_number", {
     length: 30,
@@ -71,7 +71,9 @@ const users = pgTable("users", {
 
   created_at: timestamp("created_at", {
     withTimezone: true,
-  }).notNull(),
+  })
+    .notNull()
+    .defaultNow(),
 
   updated_at: timestamp("updated_at", {
     withTimezone: true,

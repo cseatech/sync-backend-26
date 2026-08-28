@@ -17,9 +17,15 @@ import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
 
 const app = express();
 
+// ── Helmet: lightweight security headers ─────────────────────
+// - CSP disabled to avoid breaking the frontend
+// - X-Frame-Options: DENY prevents clickjacking
+// - X-Content-Type-Options prevents MIME sniffing
+// - X-Powered-By header stripped
 app.use(
   helmet({
     contentSecurityPolicy: false,
+    xFrameOptions: { action: "deny" },
   }),
 );
 
