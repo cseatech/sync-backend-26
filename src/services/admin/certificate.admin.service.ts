@@ -23,13 +23,14 @@ import {
  * @param payload - { username, password } from the request body
  */
 async function login(payload: CertificateLoginInput): Promise<{ token: string }> {
-  const expectedUsername =
-    process.env.CERTIFICATE_ADMIN_USERNAME || "admin";
-  const expectedPassword =
-    process.env.CERTIFICATE_ADMIN_PASSWORD || "admin123";
+  const inputUsername = payload.username.trim().toLowerCase();
+  const inputPassword = payload.password.trim();
 
-  const usernameMatch = payload.username === expectedUsername;
-  const passwordMatch = payload.password === expectedPassword;
+  const envAdmin = (process.env.CERT_ADMIN || "admin").trim().toLowerCase();
+  const envPassword = (process.env.CERT_ADMIN_PW || "admin123").trim();
+
+  const usernameMatch = inputUsername === envAdmin;
+  const passwordMatch = inputPassword === envPassword ;
 
   if (!usernameMatch || !passwordMatch) {
     throwError("Invalid certificate admin credentials", 401);
