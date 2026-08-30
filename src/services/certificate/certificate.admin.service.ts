@@ -11,6 +11,8 @@ import {
   CertificateLoginInput,
   CertificateInsertWinnerInput,
 } from "../../validators/certificate.validator";
+import { register } from "module";
+import { email } from "zod";
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
@@ -130,6 +132,9 @@ async function getAllWinners() {
       csea_code: users.csea_code,
       full_name: users.full_name,
       position: winners.position,
+      register_number: users.register_number,
+      phone: users.phone,
+      email: users.email,
       awarded_at: winners.awarded_at,
     })
     .from(winners)

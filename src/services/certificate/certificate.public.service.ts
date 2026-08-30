@@ -43,6 +43,7 @@ async function getUserCertificates(
 ): Promise<CertificateMetadata[]> {
   const rows = await db
     .select({
+      register_number: users.register_number,
       event_name: events.event_name,
       position: winners.position,
       awarded_at: winners.awarded_at,

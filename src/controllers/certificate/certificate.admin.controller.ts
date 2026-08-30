@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 
-import certificateAdminService from "../../services/admin/certificate.admin.service";
+import certificateAdminService from "../../services/certificate/certificate.admin.service";
 
 import {
   certificateLoginSchema,

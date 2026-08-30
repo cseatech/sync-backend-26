@@ -6,7 +6,14 @@ import { z } from "zod";
  * Ensures csea_code is present and non-empty in the URL params.
  */
 const getCertificatesByCodeParamsSchema = z.object({
-  csea_code: z.string().trim().min(1, "csea_code param is required"),
+  csea_code: z
+    .string()
+    .trim()
+    .min(1, "CSEA code is required")
+    .regex(/^[A-Z]{2}\d{4}$/, {
+      message:
+        "CSEA code must match format AA0000",
+    }),
 });
 
 /**
@@ -16,7 +23,14 @@ const getCertificatesByCodeParamsSchema = z.object({
  * eventId   — coerced from string to number (query strings are always strings)
  */
 const downloadCertificateQuerySchema = z.object({
-  cseaCode: z.string().trim().min(1, "cseaCode query param is required"),
+  cseaCode: z
+    .string()
+    .trim()
+    .min(1, "CSEA code is required")
+    .regex(/^[A-Z]{2}\d{4}$/, {
+      message:
+        "CSEA code must match format AA0000",
+    }),
 
   eventId: z.coerce
     .number()
