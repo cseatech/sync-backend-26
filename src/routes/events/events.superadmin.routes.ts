@@ -11,7 +11,7 @@ import { protect, authorize } from "../../middleware/authMiddleware";
 const router = express.Router();
 
 // Superadmin (privileged) check is enforced in the service layer.
-router.use(protect, authorize("admin"));
+router.use("/superadmin", protect, authorize("admin"));
 
 // GET /api/v1/superadmin/events/:event_id/admins
 // Returns all admins assigned to the event
