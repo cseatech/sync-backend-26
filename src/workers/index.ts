@@ -1,22 +1,34 @@
 import { run, makeWorkerUtils, WorkerUtils, Runner } from "graphile-worker";
+import { Pool as PgPool } from "pg";
 import { sendOtpTask } from "./tasks/send-otp";
 import { generateTicketTask } from "./tasks/generate-ticket";
 
 let workerUtils: WorkerUtils | null = null;
 let runner: Runner | null = null;
+let workerPool: PgPool | null = null;
 
 /**
  * Initialise the graphile-worker runner and utility handle.
  *
- * Creates infrastructure tables in the `graphile_worker` schema on
- * first run. Must be called once during server bootstrap.
+ * IMPORTANT: We create ONE shared pg Pool (max 6) and pass it to both
+ * `makeWorkerUtils` and `run`. Without this, each would create its own
+ * unbounded pool, easily exceeding Supabase session pooler's 15-conn limit.
+ *
+ * Connection budget (session pooler, port 5432):
+ *   3 concurrent workers + 1 LISTEN/NOTIFY + 1 workerUtils + 1 headroom = 6
  */
 async function initializeWorker(connectionString: string): Promise<void> {
-  workerUtils = await makeWorkerUtils({ connectionString });
+  workerPool = new PgPool({
+    connectionString,
+    max: 6,
+    ssl: { rejectUnauthorized: false },
+  });
+
+  workerUtils = await makeWorkerUtils({ pgPool: workerPool });
 
   runner = await run({
-    connectionString,
-    concurrency: 5,
+    pgPool: workerPool,
+    concurrency: 3,
     noHandleSignals: false,
     pollInterval: 1000,
     taskList: {
@@ -47,7 +59,10 @@ async function addJob(
 }
 
 /**
- * Gracefully stop the worker runner and release the utility pool.
+ * Gracefully stop the worker runner and release the shared pool.
+ *
+ * When using `pgPool` (not `connectionString`), Graphile does NOT
+ * release the pool automatically — we must do it ourselves.
  */
 async function shutdownWorker(): Promise<void> {
   if (runner) {
@@ -58,6 +73,11 @@ async function shutdownWorker(): Promise<void> {
     await workerUtils.release();
     workerUtils = null;
   }
+  if (workerPool) {
+    await workerPool.end();
+    workerPool = null;
+  }
 }
 
 export { initializeWorker, addJob, shutdownWorker };
+

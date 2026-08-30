@@ -33,9 +33,11 @@ const generateTicketTask: Task = async (payload, helpers) => {
     `Generating registration ticket for ${email} — code ${cseaCode}`,
   );
 
-  // Generate QR code entirely in-memory (no file-system writes)
+  // Generate QR code as PNG buffer with CID attachment.
+  // SVG would be lighter, but email clients (Gmail, Outlook) strip <svg>
+  // tags for security. PNG + CID is the only universally supported method.
   const qrBuffer: Buffer = await QRCode.toBuffer(cseaCode, {
-    width: 300,
+    width: 200,
     margin: 2,
     color: { dark: "#000000", light: "#ffffff" },
   });
@@ -66,7 +68,7 @@ const generateTicketTask: Task = async (payload, helpers) => {
             <p style="font-size: 38px; font-weight: 800; color: #1e40af; letter-spacing: 6px; margin: 0;">${cseaCode}</p>
           </div>
 
-          <!-- QR Code (inline CID attachment) -->
+          <!-- QR Code (CID attachment — universally supported in email clients) -->
           <div style="text-align: center; margin: 28px 0;">
             <img src="cid:qrcode" alt="QR Code" width="200" height="200" style="border-radius: 8px; border: 1px solid #e5e7eb;" />
             <p style="color: #9ca3af; font-size: 12px; margin-top: 8px;">Scan at the venue for check-in</p>

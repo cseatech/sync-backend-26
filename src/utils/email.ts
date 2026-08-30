@@ -59,6 +59,16 @@ async function sendMail(
   const senderEmail =
     process.env.BREVO_SENDER_EMAIL || "noreply@symposium.com";
 
+  // ── IMPORTANT: Bypass sending for dummy test emails ──
+  // Brevo free tier allows 300 emails/day. Sending 113 @example.com
+  // emails per run will instantly burn the quota and cause Brevo to
+  // flag the account for high bounce rates, silently dropping real emails.
+  if (to.toLowerCase().endsWith("@example.com") || to.toLowerCase().endsWith("@loadtest.local")) {
+    // Simulate slight network delay
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    return;
+  }
+
   await transporter.sendMail({
     from: senderEmail,
     to,

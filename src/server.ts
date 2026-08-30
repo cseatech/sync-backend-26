@@ -12,9 +12,12 @@ import { initializeWorker } from "./workers/index";
  */
 async function startServer(): Promise<void> {
   try {
-    // ── 1. Graphile worker ──
-    if (config.DATABASE_URL) {
-      await initializeWorker(config.DATABASE_URL);
+    // ── 1. Graphile worker (Session Pooler, port 5432) ──
+    // Worker needs LISTEN/NOTIFY which requires session mode.
+    // Falls back to DATABASE_URL if WORKER_DATABASE_URL is not set.
+    const workerUrl = config.WORKER_DATABASE_URL || config.DATABASE_URL;
+    if (workerUrl) {
+      await initializeWorker(workerUrl);
     } else {
       console.warn(
         "⚠️  DATABASE_URL not set — graphile-worker will not start",

@@ -16,12 +16,13 @@ import {
 
 const pool = new Pool({
   connectionString: config.DATABASE_URL,
+  max: 8, // Explicit limit — leaves room for Graphile Worker (~5 conns)
 
   ssl:
     config.NODE_ENV === "production"
       ? {
-          rejectUnauthorized: false,
-        }
+        rejectUnauthorized: false,
+      }
       : false,
 });
 

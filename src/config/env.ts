@@ -3,6 +3,7 @@ import "dotenv/config";
 const PORT = Number(process.env.PORT || 5000);
 
 const DATABASE_URL = process.env.DATABASE_URL;
+const WORKER_DATABASE_URL = process.env.WORKER_DATABASE_URL;
 
 const NODE_ENV = process.env.NODE_ENV || "development";
 
@@ -16,6 +17,7 @@ const SMTP_FROM = process.env.SMTP_FROM || "noreply@symposium.com";
 export const config = {
   PORT,
   DATABASE_URL,
+  WORKER_DATABASE_URL,
   NODE_ENV,
   SMTP_HOST,
   SMTP_PORT,

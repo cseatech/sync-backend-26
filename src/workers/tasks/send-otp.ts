@@ -24,7 +24,7 @@ const sendOtpTask: Task = async (payload, helpers) => {
       </div>
       <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
         <p style="color: #374151; font-size: 15px; line-height: 1.6;">
-          Use the code below to complete your verification. It expires in <strong>10 minutes</strong>.
+          Use the code below to complete your verification. It expires in <strong>5 minutes</strong>.
         </p>
         <div style="background: #f8fafc; border: 2px dashed #2563eb; border-radius: 8px; padding: 18px; text-align: center; margin: 24px 0;">
           <span style="font-size: 36px; font-weight: 700; letter-spacing: 10px; color: #1e40af;">${otp}</span>

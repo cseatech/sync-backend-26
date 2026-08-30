@@ -27,12 +27,12 @@ interface RegistrationStagingData {
  * Global LRU cache for registration staging.
  *
  * - max 5 000 entries (~2.5 MB peak)
- * - 10-minute TTL (OTP expiry window)
+ * - 5-minute TTL (OTP expiry window)
  * - Key: normalised email address
  */
 const registrationCache = new LRUCache<string, RegistrationStagingData>({
   max: 5000,
-  ttl: 600_000,
+  ttl: 300_000,
 });
 
 /**

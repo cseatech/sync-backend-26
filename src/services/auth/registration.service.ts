@@ -42,11 +42,14 @@ async function initiateRegistration(
     throwError("Email is already registered", 400);
   }
 
-  // ── Hash password upfront (bcrypt, 12 salt rounds) ──
-  const passwordHash = await bcrypt.hash(payload.password, 12);
+  // ── Hash password upfront (bcrypt, 10 salt rounds — OWASP default) ──
+  const passwordHash = await bcrypt.hash(payload.password, 10);
 
-  // ── Generate cryptographically secure 6-digit OTP ──
-  const otp = generateOTP();
+  // ── Generate OTP ──
+  // In non-production: fixed "123456" so load-test tools (k6) can verify
+  // In production: cryptographically secure 6-digit OTP
+  const otp =
+    process.env.NODE_ENV === "production" ? generateOTP() : "123456";
 
   // ── Stage everything in the LRU cache (key = email) ──
   registrationCache.set(normalizedEmail, {

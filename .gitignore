@@ -35,3 +35,6 @@ Thumbs.db
 .npm/
 .yarn/
 .pnpm-store/
+
+# Load testing
+k6-bin/
