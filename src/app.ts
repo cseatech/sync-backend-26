@@ -17,9 +17,15 @@ import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
 
 const app = express();
 
+// ── Helmet: lightweight security headers ─────────────────────
+// - CSP disabled to avoid breaking the frontend
+// - X-Frame-Options: DENY prevents clickjacking
+// - X-Content-Type-Options prevents MIME sniffing
+// - X-Powered-By header stripped
 app.use(
   helmet({
     contentSecurityPolicy: false,
+    xFrameOptions: { action: "deny" },
   }),
 );
 
@@ -52,6 +58,16 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/v1", authRoutes);
+
+// ── Load-test routes (no rate limiter) — NEVER in production ──
+// MUST be mounted before routers that use router.use(protect), otherwise
+// Express 5 short-circuits with 401 before reaching the test router.
+import testRoutes from "./routes/auth/test.routes.js";
+if (process.env.NODE_ENV !== "production") {
+  app.use("/api/v1", testRoutes);
+  console.log("🧪 Test routes mounted at /api/v1/test/*");
+}
+
 app.use("/api/v1", adminRoutes);
 app.use("/api/v1", eventsPublicRoutes);
 app.use("/api/v1", eventsAdminRoutes);
