@@ -16,7 +16,7 @@ import {
 
 const pool = new Pool({
   connectionString: config.DATABASE_URL,
-  max: 8, // Explicit limit — leaves room for Graphile Worker (~5 conns)
+  max: 200, // Massive concurrency unlocked because we use the Transaction Pooler!
 
   ssl:
     config.NODE_ENV === "production"
