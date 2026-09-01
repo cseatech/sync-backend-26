@@ -30,10 +30,11 @@ const BASE_URL = __ENV.BASE_URL || "http://localhost:5000";
 const FIXED_OTP = "123456";
 
 export const options = {
-  // Ramp-up pattern: simulate violent traffic spike
+  // Ramp-up pattern: simulate gradual traffic increase
   stages: [
-    { duration: "5s", target: 200 },   // Violent spike to 200 VUs in just 5 seconds!
-    { duration: "40s", target: 200 },  // Hold absolute peak for 40s
+    { duration: "10s", target: 30 },   // Warm up to 30 VUs
+    { duration: "20s", target: 120 },  // Ramp to 120 VUs (your target)
+    { duration: "30s", target: 120 },  // Hold at 120 VUs for 30s
     { duration: "10s", target: 0 },    // Ramp down
   ],
 
