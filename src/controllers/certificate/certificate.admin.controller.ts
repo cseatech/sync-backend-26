@@ -7,6 +7,10 @@ import {
   certificateInsertWinnerSchema,
 } from "../../validators/certificate.validator";
 
+import { downloadCertificateQuerySchema } from "../../validators/certificate.public.validator";
+
+import { streamCertificate } from "../../services/certificate/pdf.service";
+
 import { handleControllerError } from "../../utils/controllerError";
 
 /**
@@ -84,4 +88,31 @@ async function listWinners(
   }
 }
 
-export { certificateLogin, addWinner, listWinners };
+/**
+ * GET /api/v1/admin/certificate/download
+ *
+ * Allows a certificate admin to download any winner's certificate PDF
+ * without needing a user JWT. Validates csea_code + event_id query params,
+ * verifies the winning record exists, then streams the generated PDF.
+ */
+async function adminDownloadCertificate(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const query = downloadCertificateQuerySchema.parse({
+      cseaCode: req.query.csea_code,
+      eventId: req.query.event_id,
+    });
+    const winnerData = await certificateAdminService.getWinnerDataForCertificate(
+      query.cseaCode,
+      query.eventId,
+    );
+    await streamCertificate(res, winnerData);
+  } catch (error: unknown) {
+    handleControllerError(error, res, next);
+  }
+}
+
+export { certificateLogin, addWinner, listWinners, adminDownloadCertificate };
