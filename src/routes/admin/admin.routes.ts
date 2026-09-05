@@ -2,6 +2,7 @@ import express from "express";
 
 import {
   adminLogin,
+  adminLogout,
   changePassword,
 } from "../../controllers/admin/admin.controller";
 
@@ -10,6 +11,7 @@ import { protect, authorize } from "../../middleware/authMiddleware";
 const router = express.Router();
 
 router.post("/admin/login", adminLogin);
+router.post("/admin/logout", adminLogout);
 
 router.post(
   "/admin/changePassword",

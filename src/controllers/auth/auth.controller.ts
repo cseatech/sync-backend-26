@@ -16,6 +16,7 @@ import {
 } from "../../validators/auth.validator";
 
 import { handleControllerError } from "../../utils/controllerError";
+import { setAuthCookie } from "../../utils/authCookie";
 
 // ── Registration ──────────────────────────────────────────────
 
@@ -71,11 +72,12 @@ async function login(
     const body = req.body || {};
     const parsed = loginSchema.parse(body);
     const result = await authService.login(parsed);
+    setAuthCookie(res, result.token);
 
     res.status(200).json({
       success: true,
       message: "Login successful",
-      data: result,
+      data: { user: result.user },
     });
 
   } catch (error: unknown) {

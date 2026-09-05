@@ -42,7 +42,19 @@ async function login(payload: LoginInput) {
   }
 
   const [user] = await db
-    .select()
+    .select({
+      user_id: users.user_id,
+      csea_code: users.csea_code,
+      register_number: users.register_number,
+      full_name: users.full_name,
+      email: users.email,
+      phone: users.phone,
+      college: users.college,
+      department: users.department,
+      year: users.year,
+      gender: users.gender,
+      password_hash: users.password_hash,
+    })
     .from(users)
     .where(eq(users.email, normalizedEmail))
     .limit(1);
@@ -298,7 +310,7 @@ async function requestOTP(email: string) {
   }
 
   const otp = generateOTP();
-
+  console.log(otp)
   // Stage OTP in LRU cache — replaces old JWT-hash approach
   forgotPasswordCache.set(normalizedEmail, {
     otp,
