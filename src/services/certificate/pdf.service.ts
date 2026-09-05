@@ -6,22 +6,24 @@ import { Response } from "express";
 import { VerifiedWinnerData } from "./certificate.public.service";
 
 // ── Template path ──────────────────────────────────────────────────────────────
-// The blank template PDF lives two levels above the compiled src/ tree.
-//
-// Directory layout assumed:
-//   certificate/
-//     Sync Winners Certificate without content.pdf   ← background template
-//     sync-backend-26/
-//       src/
-//         services/public/pdf.service.ts             ← this file
-const TEMPLATE_PATH = path.resolve(
-  __dirname,
-  "..",
-  "..",
-  "..",
-  "..",
-  "Sync Winners Certificate without content.pdf",
-);
+// The blank template PDF lives in Certificate_temp on the project root.
+function resolveTemplatePath(): string {
+  const possiblePaths = [
+    path.resolve(__dirname, "..", "..", "..", "Certificate_temp", "Sync Winners Certificate without content.pdf"),
+    path.resolve(process.cwd(), "Certificate_temp", "Sync Winners Certificate without content.pdf"),
+  ];
+
+  for (const candidate of possiblePaths) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return path.resolve(process.cwd(), "Certificate_temp", "Sync Winners Certificate without content.pdf");
+}
+
+const TEMPLATE_PATH = resolveTemplatePath();
+
 
 // ── Exact blank underline positions ────────────────────────────────────────────
 // Sourced from the decompressed page content stream (rectangle operators):
@@ -34,10 +36,10 @@ const TEMPLATE_PATH = path.resolve(
 //   line 1 y = 288.82  ("This is to certify that Mr./Ms.")
 //   line 2 y = 258.80  ("of _ has secured _ in the event")
 //   line 3 y = 228.79  ("_ as part of Sync'25 organized by CSEA,")
-const BLANK_NAME    = { x: 382.40, right: 730.37, y: 288.82 }; // after "Mr./Ms."
-const BLANK_DEPT    = { x: 150.16, right: 476.73, y: 258.80 }; // "of __ has secured" (dept + year)
-const BLANK_POS     = { x: 593.29, right: 633.56, y: 258.80 }; // "has secured __ in the event"
-const BLANK_EVT     = { x: 123.93, right: 425.47, y: 228.79 }; // before "as part of Sync'25"
+const BLANK_NAME = { x: 382.40, right: 730.37, y: 288.82 }; // after "Mr./Ms."
+const BLANK_DEPT = { x: 150.16, right: 476.73, y: 258.80 }; // "of __ has secured" (dept + year)
+const BLANK_POS = { x: 593.29, right: 633.56, y: 258.80 }; // "has secured __ in the event"
+const BLANK_EVT = { x: 123.93, right: 425.47, y: 228.79 }; // before "as part of Sync'25"
 
 /**
  * Generate a certificate PDF entirely in RAM and stream it to the Express response.
@@ -146,22 +148,22 @@ function deptYearLabel(department: string, year: number): string {
   const upper = department.toUpperCase();
 
   const ABBR: [RegExp, string][] = [
-    [/COMPUTER SCIENCE/,           "CSE"],
-    [/INFORMATION TECHNOLOGY/,     "IT"],
+    [/COMPUTER SCIENCE/, "CSE"],
+    [/INFORMATION TECHNOLOGY/, "IT"],
     [/ELECTRONICS.*COMMUNICATION/, "ECE"],
-    [/ELECTRICAL.*ELECTRONICS/,    "EEE"],
-    [/MECHANICAL/,                 "MECH"],
-    [/CIVIL/,                      "CIVIL"],
-    [/CHEMICAL/,                   "CHEM"],
-    [/BIOTECHNOLOGY/,              "BT"],
-    [/BIOMEDICAL/,                 "BME"],
-    [/INSTRUMENTATION/,            "ICE"],
-    [/PRODUCTION/,                 "PROD"],
-    [/AERONAUTICAL/,               "AERO"],
-    [/AUTOMOBILE/,                 "AUTO"],
-    [/MINING/,                     "MINING"],
-    [/TEXTILE/,                    "TEXTILE"],
-    [/ARTIFICIAL INTELLIGENCE/,    "AI&DS"],
+    [/ELECTRICAL.*ELECTRONICS/, "EEE"],
+    [/MECHANICAL/, "MECH"],
+    [/CIVIL/, "CIVIL"],
+    [/CHEMICAL/, "CHEM"],
+    [/BIOTECHNOLOGY/, "BT"],
+    [/BIOMEDICAL/, "BME"],
+    [/INSTRUMENTATION/, "ICE"],
+    [/PRODUCTION/, "PROD"],
+    [/AERONAUTICAL/, "AERO"],
+    [/AUTOMOBILE/, "AUTO"],
+    [/MINING/, "MINING"],
+    [/TEXTILE/, "TEXTILE"],
+    [/ARTIFICIAL INTELLIGENCE/, "AI&DS"],
   ];
 
   let abbr = department; // default: use as-is

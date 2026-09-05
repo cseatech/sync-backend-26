@@ -6,6 +6,7 @@ import {
   certificateLogin,
   addWinner,
   listWinners,
+  adminDownloadCertificate,
 } from "../../controllers/certificate/certificate.admin.controller";
 
 const router = express.Router();
@@ -32,5 +33,14 @@ router.post("/admin/certificate/winners", protectCertificateAdmin, addWinner);
  * Returns all winners joined with user and event information.
  */
 router.get("/admin/certificate/winners", protectCertificateAdmin, listWinners);
+
+/**
+ * GET /api/v1/admin/certificate/download
+ *
+ * Protected — requires a valid certificate_admin JWT.
+ * Query params: csea_code, event_id
+ * Streams a PDF certificate for any winner without needing a user JWT.
+ */
+router.get("/admin/certificate/download", protectCertificateAdmin, adminDownloadCertificate);
 
 export default router;

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 import { db } from "../../db/index";
 import { users, events, winners } from "../../db/schema";
@@ -11,8 +11,6 @@ import {
   CertificateLoginInput,
   CertificateInsertWinnerInput,
 } from "../../validators/certificate.validator";
-import { register } from "module";
-import { email } from "zod";
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
@@ -25,13 +23,14 @@ import { email } from "zod";
  * @param payload - { username, password } from the request body
  */
 async function login(payload: CertificateLoginInput): Promise<{ token: string }> {
-  const expectedUsername =
-    process.env.CERTIFICATE_ADMIN_USERNAME || "CSEA_OB";
-  const expectedPassword =
-    process.env.CERTIFICATE_ADMIN_PASSWORD || "cseasyncob";
+  const inputUsername = payload.username.trim().toLowerCase();
+  const inputPassword = payload.password.trim();
 
-  const usernameMatch = payload.username === expectedUsername;
-  const passwordMatch = payload.password === expectedPassword;
+  const envAdmin = (process.env.CERT_ADMIN || "admin").trim().toLowerCase();
+  const envPassword = (process.env.CERT_ADMIN_PW || "admin123").trim();
+
+  const usernameMatch = inputUsername === envAdmin;
+  const passwordMatch = inputPassword === envPassword ;
 
   if (!usernameMatch || !passwordMatch) {
     throwError("Invalid certificate admin credentials", 401);
@@ -144,4 +143,40 @@ async function getAllWinners() {
   return rows;
 }
 
-export default { login, insertWinner, getAllWinners };
+// ── Get Winner Data for Certificate (Admin) ───────────────────────────────
+
+/**
+ * Fetch winner data for certificate PDF generation, callable by a
+ * certificate admin without requiring a user JWT.
+ *
+ * Throws 404 when no matching record exists.
+ */
+async function getWinnerDataForCertificate(csea_code: string, event_id: number) {
+
+  const [row] = await db
+    .select({
+      full_name: users.full_name,
+      department: users.department,
+      year: users.year,
+      event_name: events.event_name,
+      position: winners.position,
+    })
+    .from(winners)
+    .innerJoin(users, eq(winners.user_id, users.user_id))
+    .innerJoin(events, eq(winners.event_id, events.event_id))
+    .where(
+      and(
+        eq(users.csea_code, csea_code),
+        eq(winners.event_id, event_id),
+      ),
+    )
+    .limit(1);
+
+  if (!row) {
+    throwError(`No winning record found for CSEA code: ${csea_code} in event ID: ${event_id}`, 404);
+  }
+
+  return row!;
+}
+
+export default { login, insertWinner, getAllWinners, getWinnerDataForCertificate };
