@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyToken,AppJwtPayload} from "../utils/jwt";
+import { getAuthCookie } from "../utils/authCookie";
 
 
 declare global {
@@ -18,7 +19,9 @@ async function protect(
   try {
     const authHeader = req.headers.authorization || "";
 
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : getAuthCookie(req.headers.cookie);
 
     if (!token) {
       res.status(401).json({

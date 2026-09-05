@@ -14,6 +14,7 @@ import {
 } from "../../controllers/auth/auth.controller";
 
 import { protect, authorize } from "../../middleware/authMiddleware";
+import { clearAuthCookie } from "../../utils/authCookie";
 
 const router = express.Router();
 
@@ -35,6 +36,11 @@ router.post("/register/verify", verifyRegistration);
 
 // ── Login (public) ───────────────────────────────────────────
 router.post("/auth/login", login);
+
+router.post("/auth/logout", (req, res) => {
+  clearAuthCookie(res);
+  res.status(200).json({ success: true, message: "Logout successful" });
+});
 
 // ── Forgot Password OTP (public, cache-based) ────────────────
 router.post("/auth/getOTP", getOTP);

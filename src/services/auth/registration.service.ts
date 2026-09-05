@@ -50,7 +50,7 @@ async function initiateRegistration(
   // In production: cryptographically secure 6-digit OTP
   const otp =
     process.env.NODE_ENV === "production" ? generateOTP() : "123456";
-
+  console.log(otp)
   // ── Stage everything in the LRU cache (key = email) ──
   registrationCache.set(normalizedEmail, {
     otp,

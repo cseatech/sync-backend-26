@@ -33,7 +33,15 @@ async function adminLogin(payload: AdminLoginInput) {
   }
 
   const [admin] = await db
-    .select()
+    .select({
+      admin_id: admins.admin_id,
+      name: admins.name,
+      email: admins.email,
+      password_hash: admins.password_hash,
+      position: admins.position,
+      domain: admins.domain,
+      privileged: admins.privileged,
+    })
     .from(admins)
     .where(eq(admins.email, normalizedEmail))
     .limit(1);
