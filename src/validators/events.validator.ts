@@ -1,13 +1,10 @@
 import { z } from "zod";
 
 const eventIdParamSchema = z.object({
-  event_id: z
-    .string()
-    .trim()
-    .min(1, "Event ID is required")
-    .refine((val: string) => /^\d+$/.test(val) && Number(val) > 0, {
-      message: "Event ID must be a positive integer",
-    }),
+  event_id: z.coerce
+    .number()
+    .int("Event ID must be an integer")
+    .positive("Event ID must be a positive integer"),
 });
 
 // extracted the common cseaCode schema to reuse it in multiple places
@@ -33,24 +30,18 @@ const addParticipantsBodySchema = z.object({
 
 // Param schema for team_no in URL
 const teamNoParamSchema = z.object({
-  team_no: z
-    .string()
-    .trim()
-    .min(1, "Team number is required")
-    .refine((val: string) => /^\d+$/.test(val) && Number(val) > 0, {
-      message: "Team number must be a positive integer",
-    }),
+   team_no: z.coerce
+    .number()
+    .int("Team number must be an integer")
+    .positive("Team number must be a positive integer"),
 });
 
 // Body schema for superadmin routes that accept a target admin_id
 const adminIdBodySchema = z.object({
-  admin_id: z
-    .string()
-    .trim()
-    .min(1, "Admin ID is required")
-    .refine((val: string) => /^\d+$/.test(val) && Number(val) > 0, {
-      message: "Admin ID must be a positive integer",
-    }),
+  admin_id: z.coerce
+    .number()
+    .int("Admin ID must be an integer")
+    .positive("Admin ID must be a positive integer"),
 });
 
 type EventIdParam = z.infer<typeof eventIdParamSchema>;
