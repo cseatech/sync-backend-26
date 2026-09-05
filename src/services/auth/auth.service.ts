@@ -3,7 +3,9 @@ import { eq } from "drizzle-orm";
 
 import { db } from "../../db/index";
 import { users } from "../../db/schema";
-import {generateOTP,verifyOTP,getOTPToken} from "../../utils/otp";
+import { generateOTP, compareOTP } from "../../utils/otp";
+import { forgotPasswordCache } from "../../cache/forgotPasswordCache";
+import { addJob } from "../../workers/index";
 import {
   signToken,
   verifyToken,
@@ -11,11 +13,11 @@ import {
   PasswordResetJwtPayload,
   AppJwtPayload,
 } from "../../utils/jwt";
-import {sendMail} from "../../utils/email";
 import {
   LoginInput,
   ChangePasswordInput,
   ForgetPasswordInput,
+  UpdateProfileInput,
 } from "../../validators/auth.validator";
 
 import { throwError } from "../../utils/serviceError";
@@ -114,7 +116,6 @@ async function getProfileByCseaCode(
 
   if (String(requester.role || "").toLowerCase() === "admin") {
     return {
-      // user_id: user.user_id,
       csea_code: user.csea_code,
       register_number: user.register_number,
       full_name: user.full_name,
@@ -124,18 +125,14 @@ async function getProfileByCseaCode(
       department: user.department,
       year: user.year,
       gender: user.gender,
-
-      // created_at: user.created_at,
-      // updated_at: user.updated_at,
     };
   }
 
-  if (Number(requester.user_id) !== Number(user.user_id)) {
+  if (Number((requester as UserJwtPayload).user_id) !== Number(user.user_id)) {
     throwError("You are not allowed to access this profile", 403);
   }
 
   return {
-    // user_id: user.user_id,
     csea_code: user.csea_code,
     register_number: user.register_number,
     full_name: user.full_name,
@@ -145,9 +142,6 @@ async function getProfileByCseaCode(
     department: user.department,
     year: user.year,
     gender: user.gender,
-
-    // created_at: user.created_at,
-    // updated_at: user.updated_at,
   };
 }
 
@@ -276,48 +270,170 @@ async function forgetPassword(payload: ForgetPasswordInput) {
 }
 
 /**
- * Generate and email a one-time password for password recovery.
+ * Generate and dispatch a one-time password for forgot-password recovery.
  *
- * Returns a short-lived token containing the hashed OTP for later verification.
+ * Stores the OTP in an LRU cache (keyed by email) and enqueues a
+ * `send-otp` job via graphile-worker. The OTP is NEVER returned to
+ * the frontend — no token, no hash, nothing.
  *
  * @param email - Email address of the user requesting password recovery
  */
 async function requestOTP(email: string) {
-  const user = await db
-    .select()
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+
+  if (!normalizedEmail) {
+    throwError("Email is required", 400);
+  }
+
+  const [user] = await db
+    .select({ email: users.email })
     .from(users)
-    .where(eq(users.email, email))
+    .where(eq(users.email, normalizedEmail))
     .limit(1);
-    if (!user) {
-      throwError("User not found", 404);
-    }
-    const OTP=generateOTP();
-    const OTPToken=getOTPToken(OTP,email);
-    await sendMail(email, " OTP for resetting password", `Your OTP code is: ${OTP}`);
-    return OTPToken;
+
+  if (!user) {
+    throwError("No account found with this email", 404);
+  }
+
+  const otp = generateOTP();
+
+  // Stage OTP in LRU cache — replaces old JWT-hash approach
+  forgotPasswordCache.set(normalizedEmail, {
+    otp,
+    attempts: 0,
+  });
+
+  // Dispatch via background worker (no SMTP latency in request cycle)
+  await addJob("send-otp", { email: normalizedEmail, otp });
+
+  return { message: "OTP sent successfully" };
 }
 
-  /**
-   * Verify a submitted one-time password and issue a reset token.
-   *
-   * The returned reset token can be used to complete the password reset flow.
-   *
-   * @param email - Email address associated with the OTP
-   * @param OTP - One-time password submitted by the user
-   * @param token - OTP verification token returned by requestOTP
-   */
-async function verifyEnteredOTP(email: string, OTP: number | string, token: string) {
-  const isValid = verifyOTP(String(OTP), email, token);
-  if (!isValid) {
-    throwError("Invalid or expired OTP", 401);
+/**
+ * Verify a submitted OTP for forgot-password and issue a short-lived reset token.
+ *
+ * Security:
+ * - Timing-safe comparison via crypto.timingSafeEqual.
+ * - 3-strike lockout: deletes cache entry after 3 failures.
+ * - Replay protection: deletes cache entry on success.
+ *
+ * @param email - Email address associated with the OTP
+ * @param otp   - One-time password submitted by the user
+ */
+async function verifyEnteredOTP(email: string, otp: string) {
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+
+  const staged = forgotPasswordCache.get(normalizedEmail);
+
+  if (!staged) {
+    throwError("OTP expired or invalid. Please request a new OTP.", 400);
   }
+
+  const isValid = compareOTP(String(otp), staged.otp);
+
+  if (!isValid) {
+    staged.attempts += 1;
+
+    if (staged.attempts >= 3) {
+      forgotPasswordCache.delete(normalizedEmail);
+      throwError(
+        "Too many failed attempts. Please request a new OTP.",
+        400,
+      );
+    }
+
+    forgotPasswordCache.set(normalizedEmail, staged);
+    throwError(
+      `Invalid OTP. ${3 - staged.attempts} attempt(s) remaining.`,
+      400,
+    );
+  }
+
+  // Valid — delete immediately (replay protection)
+  forgotPasswordCache.delete(normalizedEmail);
+
   const resetTokenPayload: PasswordResetJwtPayload = {
-    email,
-    scope: "password_reset"
+    email: normalizedEmail,
+    scope: "password_reset",
   };
-  const resetToken = signToken(resetTokenPayload,"5m");
-  return resetToken;
+
+  const resetToken = signToken(resetTokenPayload, "5m");
+
+  return { resetToken };
 }
+
+/**
+ * Update a user's profile.
+ *
+ * Updatable fields: full_name, phone, college, department, year, gender.
+ * Non-updatable: email, register_number, csea_code, password_hash, user_id.
+ *
+ * @param userId  - User ID from the decoded JWT
+ * @param payload - Partial profile fields to update
+ */
+async function updateProfile(
+  userId: number | undefined,
+  payload: UpdateProfileInput,
+) {
+  if (!userId) {
+    throwError("Authentication required", 401);
+  }
+
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.user_id, Number(userId)))
+    .limit(1);
+
+  if (!user) {
+    throwError("User not found", 404);
+  }
+
+  // Build update object with only provided fields
+  const updateData: Record<string, unknown> = {
+    updated_at: new Date(),
+  };
+
+  if (payload.full_name !== undefined) updateData.full_name = payload.full_name;
+  if (payload.phone !== undefined) updateData.phone = payload.phone;
+  if (payload.college !== undefined) updateData.college = payload.college;
+  if (payload.department !== undefined)
+    updateData.department = payload.department;
+  if (payload.year !== undefined) updateData.year = payload.year;
+  if (payload.gender !== undefined) updateData.gender = payload.gender;
+
+  await db
+    .update(users)
+    .set(updateData)
+    .where(eq(users.user_id, Number(userId)));
+
+  // Fetch and return updated profile (never expose user_id)
+  const [updated] = await db
+    .select()
+    .from(users)
+    .where(eq(users.user_id, Number(userId)))
+    .limit(1);
+
+  return {
+    message: "Profile updated successfully",
+    profile: {
+      csea_code: updated.csea_code,
+      register_number: updated.register_number,
+      full_name: updated.full_name,
+      email: updated.email,
+      phone: updated.phone,
+      college: updated.college,
+      department: updated.department,
+      year: updated.year,
+      gender: updated.gender,
+    },
+  };
+}
+
 export default {
   login,
   getProfileByCseaCode,
@@ -325,4 +441,5 @@ export default {
   forgetPassword,
   requestOTP,
   verifyEnteredOTP,
+  updateProfile,
 };

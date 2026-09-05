@@ -16,12 +16,13 @@ import {
 
 const pool = new Pool({
   connectionString: config.DATABASE_URL,
+  max: 200, // Massive concurrency unlocked because we use the Transaction Pooler!
 
   ssl:
     config.NODE_ENV === "production"
       ? {
-          rejectUnauthorized: false,
-        }
+        rejectUnauthorized: false,
+      }
       : false,
 });
 

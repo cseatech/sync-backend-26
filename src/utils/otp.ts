@@ -1,60 +1,34 @@
 import crypto from "crypto";
-import jwt from "jsonwebtoken";
-import type { StringValue } from "ms";
-import type { OTPPayload } from "./jwt";
 
-const SERVER_SECRET =
-  process.env.SERVER_SECRET ||
-  process.env.JWT_SECRET ||
-  "change_me_in_production";
-
-const OTP_EXPIRES_IN: StringValue = (process.env.OTP_EXPIRES_IN ||
-  "10m") as StringValue;
-
-function generateOTP(): number {
-  return crypto.randomInt(100000, 1000000);
+/**
+ * Generate a cryptographically secure 6-digit numeric OTP.
+ *
+ * Uses `crypto.randomInt()` which relies on the OS CSPRNG,
+ * making the output unpredictable and safe for verification flows.
+ */
+function generateOTP(): string {
+  return String(crypto.randomInt(100_000, 1_000_000));
 }
 
-function hashOTP(OTP: number | string): string {
-  return crypto
-    .createHash("sha256")
-    .update(`${OTP}${SERVER_SECRET}`)
-    .digest("hex");
-}
+/**
+ * Timing-attack-safe comparison of two OTP strings.
+ *
+ * Uses `crypto.timingSafeEqual()` so that the comparison time is
+ * constant regardless of where the first mismatch occurs — an
+ * attacker cannot infer correct digits from response latency.
+ *
+ * Returns false immediately (without leaking timing info) when
+ * the lengths differ, which can't happen with valid 6-digit OTPs.
+ */
+function compareOTP(provided: string, expected: string): boolean {
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
 
-function getOTPToken(OTP: number | string, email: string): string {
-  return jwt.sign(
-    {
-      email,
-      OTPHash: hashOTP(OTP),
-    },
-    SERVER_SECRET,
-    {
-      expiresIn: OTP_EXPIRES_IN,
-    },
-  );
-}
-
-function verifyOTP(
-  OTP: number | string,
-  email: string,
-  token: string,
-): boolean {
-  try {
-    const payload = jwt.verify(token, SERVER_SECRET) as OTPPayload;
-
-    const expectedHash = Buffer.from(hashOTP(OTP), "utf8");
-
-    const actualHash = Buffer.from(String(payload.OTPHash || ""), "utf8");
-
-    return (
-      payload.email === email &&
-      expectedHash.length === actualHash.length &&
-      crypto.timingSafeEqual(expectedHash, actualHash)
-    );
-  } catch {
+  if (a.length !== b.length) {
     return false;
   }
+
+  return crypto.timingSafeEqual(a, b);
 }
 
-export { generateOTP, getOTPToken, verifyOTP };
+export { generateOTP, compareOTP };
