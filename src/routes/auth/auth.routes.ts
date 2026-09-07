@@ -11,6 +11,7 @@ import {
   forgetPassword,
   getOTP,
   verifyOTP,
+  getProfileByUserId,
 } from "../../controllers/auth/auth.controller";
 
 import { protect, authorize } from "../../middleware/authMiddleware";
@@ -70,11 +71,6 @@ router.put(
   updateProfile,
 );
 
-router.get("/auth/me", protect, authorize("user"), (req, res) => {
-  res.status(200).json({
-    success: true,
-    user: req.user,
-  });
-});
+router.get("/auth/me", protect, authorize("user"),getProfileByUserId);
 
 export default router;

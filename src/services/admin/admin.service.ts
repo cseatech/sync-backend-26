@@ -7,9 +7,7 @@ import { admins } from "../../db/schema";
 import { signToken, AdminJwtPayload } from "../../utils/jwt";
 
 import {
-  AdminLoginInput,
-  ChangePasswordInput,
-} from "../../validators/auth.validator";
+  AdminLoginInput} from "../../validators/auth.validator";
 
 import { throwError } from "../../utils/serviceError";
 
@@ -82,66 +80,37 @@ async function adminLogin(payload: AdminLoginInput) {
   };
 }
 
-/**
- * Change an administrator's password.
- *
- * Verifies the current password before storing the new password hash.
- *
- * @param adminId - Admin ID from the decoded JWT
- * @param payload - Current and new password values
- */
-async function changePassword(
-  adminId: number | undefined,
-  payload: ChangePasswordInput,
-) {
-  const { oldPassword, newPassword } = payload;
-
-  if (!adminId) {
-    throwError("Admin id is required", 401);
-  }
-
-  if (!String(oldPassword || "").trim() || !String(newPassword || "").trim()) {
-    throwError("Old password and new password are required", 400);
-  }
-
+async function getAdminById(admin_id: string) {
   const [admin] = await db
-    .select()
+    .select({
+      admin_id: admins.admin_id,
+      name: admins.name,
+      email: admins.email,
+      password_hash: admins.password_hash,
+      position: admins.position,
+      domain: admins.domain,
+      privileged: admins.privileged,
+    })
     .from(admins)
-    .where(eq(admins.admin_id, Number(adminId)))
+    .where(eq(admins.admin_id, Number(admin_id)))
     .limit(1);
 
-  if (!admin || !admin.password_hash) {
+  if (!admin) {
     throwError("Admin not found", 404);
   }
 
-  const isOldPasswordValid = await bcrypt.compare(
-    String(oldPassword),
-    admin.password_hash,
-  );
-
-  if (!isOldPasswordValid) {
-    throwError("Old password is incorrect", 401);
-  }
-
-  if (String(oldPassword) === String(newPassword)) {
-    throwError("New password must be different from the old password", 400);
-  }
-
-  const hashedPassword = await bcrypt.hash(String(newPassword), 12);
-
-  await db
-    .update(admins)
-    .set({
-      password_hash: hashedPassword,
-    })
-    .where(eq(admins.admin_id, Number(adminId)));
-
   return {
-    message: "Password changed successfully",
+    admin_id: admin.admin_id,
+    name: admin.name,
+    email: admin.email,
+    position: admin.position,
+    domain: admin.domain,
+    privileged: admin.privileged,
+    role:"admin"
   };
 }
 
 export default {
   adminLogin,
-  changePassword,
+  getAdminById
 };

@@ -445,10 +445,37 @@ async function updateProfile(
     },
   };
 }
+async function getProfileByUserId(userId: number | undefined) {
+  if (!userId) {
+    throwError("Authentication required", 401);
+  }
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.user_id, Number(userId)))
+    .limit(1);
+
+  if (!user) {
+    throwError("User not found", 404);
+  }
+
+  return {
+    csea_code: user.csea_code,
+    register_number: user.register_number,
+    full_name: user.full_name,
+    email: user.email,
+    phone: user.phone,
+    college: user.college,
+    department: user.department,
+    year: user.year,
+    gender: user.gender,
+  };
+}
 
 export default {
   login,
   getProfileByCseaCode,
+  getProfileByUserId,
   changePassword,
   forgetPassword,
   requestOTP,
