@@ -37,6 +37,21 @@ function adminLogout(req: Request, res: Response): void {
   res.status(200).json({ success: true, message: "Admin logout successful" });
 }
 
+async function getAdminById(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    console.log(req.user);
+    const admin = await adminService.getAdminById(req.user?.admin_id);
+    res.status(200).json({
+      success: true,
+      data: admin,
+    });
+  } catch (error: unknown) {
+    handleControllerError(error, res, next);
+  }
+}
 
-
-export { adminLogin, adminLogout };
+export { adminLogin, adminLogout,getAdminById };
