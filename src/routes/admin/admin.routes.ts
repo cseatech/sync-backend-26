@@ -12,14 +12,6 @@ const router = express.Router();
 
 router.post("/admin/login", adminLogin);
 router.post("/admin/logout", adminLogout);
-
-router.post(
-  "/admin/changePassword",
-  protect,
-  authorize("admin"),
-  changePassword,
-);
-
 router.get("/admin/me", protect, authorize("admin"), (req, res) => {
   res.status(200).json({
     success: true,
