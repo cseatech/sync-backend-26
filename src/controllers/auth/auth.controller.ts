@@ -173,7 +173,22 @@ async function forgetPassword(
     handleControllerError(error, res, next);
   }
 }
-
+async function getProfileByUserId(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    console.log(req.user);
+    const user = await authService.getProfileByUserId(req.user?.user_id);
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error: unknown) {
+    handleControllerError(error, res, next);
+  }
+}
 // ── OTP (Forgot Password Flow — cache-based, no token exposed) ─
 
 /**
@@ -242,4 +257,5 @@ export {
   forgetPassword,
   getOTP,
   verifyOTP,
+  getProfileByUserId,
 };
