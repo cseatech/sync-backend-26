@@ -127,7 +127,7 @@ async function assignAdmin(
       access_granted_at: now,
     });
   } catch (error) {
-    handleDbError(error); 
+    handleDbError(error);
   }
 
   return {
@@ -198,8 +198,37 @@ async function removeAdmin(
   };
 }
 
+/**
+ * Return all system administrators in the database.
+ * Superadmin only (privileged = true).
+ *
+ * @param adminId    - Admin ID from decoded JWT
+ * @param privileged - privileged flag from decoded JWT
+ */
+async function getAllSystemAdmins(
+  adminId: number | undefined,
+  privileged: boolean | undefined,
+) {
+  assertSuperAdmin(adminId, privileged);
+
+  const rows = await db
+    .select({
+      admin_id: admins.admin_id,
+      name: admins.name,
+      email: admins.email,
+      position: admins.position,
+      domain: admins.domain,
+      privileged: admins.privileged,
+    })
+    .from(admins);
+
+  return rows;
+}
+
 export default {
   getEventAdmins,
+  getAllSystemAdmins,
   assignAdmin,
   removeAdmin,
 };
+

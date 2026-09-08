@@ -2,6 +2,7 @@ import express from "express";
 
 import {
   getEventAdmins,
+  getAllSystemAdmins,
   assignEventAdmin,
   removeEventAdmin,
 } from "../../controllers/events/events.superadmin.controller";
@@ -11,6 +12,10 @@ import { protect, authorize } from "../../middleware/authMiddleware";
 const router = express.Router();
 
 const adminAuth = [protect, authorize("admin")];
+
+// GET /api/v1/superadmin/admins
+// Returns all system administrators
+router.get("/superadmin/admins", adminAuth, getAllSystemAdmins);
 
 // GET /api/v1/superadmin/events/:event_id/admins
 // Returns all admins assigned to the event
@@ -25,3 +30,4 @@ router.post("/superadmin/events/:event_id/admin", adminAuth, assignEventAdmin);
 router.delete("/superadmin/events/:event_id/admin", adminAuth, removeEventAdmin);
 
 export default router;
+

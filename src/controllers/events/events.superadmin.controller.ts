@@ -118,4 +118,34 @@ async function removeEventAdmin(
   }
 }
 
-export { getEventAdmins, assignEventAdmin, removeEventAdmin };
+/**
+ * GET /api/v1/superadmin/admins
+ *
+ * Returns all system administrators.
+ * Superadmin only (privileged = true).
+ */
+async function getAllSystemAdmins(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const data = await eventsSuperadminService.getAllSystemAdmins(
+      (req.user as AdminJwtPayload)?.admin_id,
+      getPrivileged(req.user),
+    );
+
+    res.status(200).json({
+      success: true,
+      count: data.length,
+      data,
+    });
+
+    return;
+  } catch (error: unknown) {
+    handleControllerError(error, res, next);
+  }
+}
+
+export { getEventAdmins, getAllSystemAdmins, assignEventAdmin, removeEventAdmin };
+
