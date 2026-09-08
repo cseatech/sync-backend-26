@@ -36,8 +36,8 @@ function handleDbError(error: unknown): never {
 
   if (pgCode && PG_ERROR_MAP[pgCode]) {
     const [statusCode, defaultMessage] = PG_ERROR_MAP[pgCode];
-    // Prefer the pg `detail` field for context (e.g. which key conflicted)
-    throwError(cause?.detail || defaultMessage, statusCode);
+    // Prefer human readable error mapping to pass up to frontend
+    throwError(defaultMessage, statusCode);
   }
 
   // Unknown DB error — re-throw so the global errorHandler logs and 500s it
