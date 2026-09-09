@@ -43,12 +43,18 @@ async function getParticipantByCseaCode(cseaCode: string) {
 }
 
 /**
- * Fetch all events assigned to the
- * currently authenticated admin.
+ * Fetch events accessible to the currently authenticated admin.
  *
- * @param adminId - ID from decoded JWT
+ * - Superadmin (privileged = true): returns ALL events in the system.
+ * - Regular admin: returns only events assigned via adminAccess.
+ *
+ * @param adminId    - ID from decoded JWT
+ * @param privileged - privileged flag from decoded JWT
  */
-async function getAssignedEvents(adminId: number | undefined) {
+async function getAssignedEvents(
+  adminId: number | undefined,
+  privileged: boolean | undefined,
+) {
   if (!adminId) {
     throwError("Admin ID is required", 401);
   }
@@ -66,7 +72,30 @@ async function getAssignedEvents(adminId: number | undefined) {
     throwError("Admin not found", 404);
   }
 
-  // Joins adminAccess → events, filtered by this admin
+  if (privileged) {
+    // Superadmin — return all events without an adminAccess filter
+    const allEvents = await db
+      .select({
+        event_id: events.event_id,
+        event_name: events.event_name,
+        description: events.description,
+        max_team_size: events.max_team_size,
+        event_type: events.event_type,
+        prize: events.prize,
+        contact: events.contact,
+      })
+      .from(events);
+
+    return {
+      admin: {
+        admin_id: admin.admin_id,
+        name: admin.name,
+      },
+      assigned_events: allEvents,
+    };
+  }
+
+  // Regular admin — return only events assigned via adminAccess
   const assignedEvents = await db
     .select({
       event_id: events.event_id,
