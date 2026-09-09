@@ -318,7 +318,7 @@ async function requestOTP(email: string) {
   });
 
   // Dispatch via background worker (no SMTP latency in request cycle)
-  await addJob("send-otp", { email: normalizedEmail, otp });
+  await addJob("send-otp", { email: normalizedEmail, otp, type: "forgot-password" });
 
   return { message: "OTP sent successfully" };
 }

@@ -26,6 +26,10 @@ const pool = new Pool({
       : false,
 });
 
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client (main DB pool):', err);
+});
+
 const db = drizzle(pool, {
   schema: {
     users,

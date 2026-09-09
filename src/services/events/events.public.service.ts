@@ -10,33 +10,56 @@ import { AppJwtPayload } from "../../utils/jwt";
 
 type Requester = AppJwtPayload;
 
+import { LRUCache } from "lru-cache";
+
+const eventsCache = new LRUCache<string, any[]>({
+  max: 10,
+  ttl: 1000 * 60 * 5, // 5 minutes
+});
+
+let allEventsPromise: Promise<any[]> | null = null;
+
 /**
  * Fetch all events along with their rounds.
  */
 async function getAllEvents() {
-  const allEvents = await db.select().from(events);
+  const cached = eventsCache.get("allEvents");
+  if (cached) return cached;
 
-  if (!allEvents || allEvents.length === 0) {
-    return [];
-  }
+  if (allEventsPromise) return allEventsPromise;
 
-  // Fetch only the rounds that belong to the events we just loaded
-  const eventIds = allEvents.map((e) => e.event_id);
+  allEventsPromise = (async () => {
+    try {
+      const allEvents = await db.select().from(events);
 
-  const allRounds = await db
-    .select()
-    .from(round)
-    .where(inArray(round.event_id, eventIds));
+      if (!allEvents || allEvents.length === 0) {
+        eventsCache.set("allEvents", []);
+        return [];
+      }
 
-  const eventsWithRounds = allEvents.map((event) => ({
-    ...event,
+      // Fetch only the rounds that belong to the events we just loaded
+      const eventIds = allEvents.map((e) => e.event_id);
 
-    rounds: allRounds
-      .filter((r) => r.event_id === event.event_id)
-      .sort((a, b) => a.round_num - b.round_num),
-  }));
+      const allRounds = await db
+        .select()
+        .from(round)
+        .where(inArray(round.event_id, eventIds));
 
-  return eventsWithRounds;
+      const eventsWithRounds = allEvents.map((event) => ({
+        ...event,
+        rounds: allRounds
+          .filter((r) => r.event_id === event.event_id)
+          .sort((a, b) => a.round_num - b.round_num),
+      }));
+
+      eventsCache.set("allEvents", eventsWithRounds);
+      return eventsWithRounds;
+    } finally {
+      allEventsPromise = null;
+    }
+  })();
+
+  return allEventsPromise;
 }
 
 /**
