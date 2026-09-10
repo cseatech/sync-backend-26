@@ -23,7 +23,7 @@ async function adminLogin(
     res.status(200).json({
       success: true,
       message: "Admin login successful",
-      data: { user: { ...result.admin, role: "admin" } },
+      data: { token: result.token, user: { ...result.admin, role: "admin" } },
     });
 
     return;

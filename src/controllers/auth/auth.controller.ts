@@ -77,7 +77,7 @@ async function login(
     res.status(200).json({
       success: true,
       message: "Login successful",
-      data: { user: result.user },
+      data: { token: result.token, user: result.user },
     });
 
   } catch (error: unknown) {
