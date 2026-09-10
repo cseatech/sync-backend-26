@@ -36,7 +36,10 @@ app.use(
   }),
 );
 
-app.use(morgan("dev"));
+// ── Request logging (skipped in test mode to avoid I/O backpressure) ──
+if (process.env.NODE_ENV !== "test") {
+  app.use(morgan("dev"));
+}
 
 app.use(
   express.json({

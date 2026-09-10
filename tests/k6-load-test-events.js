@@ -1,5 +1,5 @@
 import http from "k6/http";
-import { check } from "k6";
+import { check, sleep } from "k6";
 
 // ── Configuration ────────────────────────────────────────────────────────
 export const options = {
@@ -17,7 +17,7 @@ export const options = {
   },
   thresholds: {
     http_req_failed: ["rate<0.01"], // Errors should be less than 1%
-    http_req_duration: ["p(95)<500"], // 95% of requests under 500ms
+    http_req_duration: ["p(95)<2000"], // 95% of requests under 2s (realistic for remote Supabase)
   },
 };
 
@@ -32,4 +32,7 @@ export default function () {
     "status 200": (r) => r.status === 200,
     "success true": (r) => r.json("success") === true,
   });
+
+  // Small pause between iterations — simulates real user browsing behavior
+  sleep(0.1);
 }

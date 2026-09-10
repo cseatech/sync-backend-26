@@ -69,7 +69,7 @@ async function initiateRegistration(
   });
 
   // ── Enqueue OTP delivery via graphile-worker ──
-  await addJob("send-otp", { email: normalizedEmail, otp });
+  await addJob("send-otp", { email: normalizedEmail, otp, type: "registration" });
 
   return { message: "OTP sent to your email" };
 }

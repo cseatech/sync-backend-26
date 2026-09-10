@@ -24,6 +24,10 @@ async function initializeWorker(connectionString: string): Promise<void> {
     ssl: { rejectUnauthorized: false },
   });
 
+  workerPool.on('error', (err) => {
+    console.error('Unexpected error on idle client (worker pool):', err);
+  });
+
   workerUtils = await makeWorkerUtils({ pgPool: workerPool });
 
   runner = await run({

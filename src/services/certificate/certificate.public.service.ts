@@ -14,6 +14,7 @@ import {
 /** Shape returned by getUserCertificates — one item per winning record. */
 interface CertificateMetadata {
   certificate_type: "Winner";
+  event_id: number;
   event_name: string;
   position: number;
   awarded_at: Date | null;
@@ -44,6 +45,7 @@ async function getUserCertificates(
   const rows = await db
     .select({
       register_number: users.register_number,
+      event_id: events.event_id,
       event_name: events.event_name,
       position: winners.position,
       awarded_at: winners.awarded_at,
@@ -55,6 +57,7 @@ async function getUserCertificates(
     .orderBy(events.event_name, winners.position);
   return rows.map((row) => ({
     certificate_type: "Winner" as const,
+    event_id: row.event_id,
     event_name: row.event_name,
     position: row.position,
     awarded_at: row.awarded_at,
