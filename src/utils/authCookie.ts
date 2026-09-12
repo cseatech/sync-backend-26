@@ -27,3 +27,22 @@ export function getAuthCookie(cookieHeader: string | undefined): string | null {
 
   return cookie ? decodeURIComponent(cookie.slice(AUTH_COOKIE_NAME.length + 1)) : null;
 }
+
+export const CERT_ADMIN_COOKIE_NAME = "cert_admin_token";
+
+export function setCertAdminCookie(res: Response, token: string): void {
+  res.cookie(CERT_ADMIN_COOKIE_NAME, token, cookieOptions);
+}
+
+export function clearCertAdminCookie(res: Response): void {
+  res.clearCookie(CERT_ADMIN_COOKIE_NAME, cookieOptions);
+}
+
+export function getCertAdminCookie(cookieHeader: string | undefined): string | null {
+  const cookie = cookieHeader
+    ?.split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${CERT_ADMIN_COOKIE_NAME}=`));
+
+  return cookie ? decodeURIComponent(cookie.slice(CERT_ADMIN_COOKIE_NAME.length + 1)) : null;
+}

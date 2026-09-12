@@ -12,12 +12,14 @@ import { downloadCertificateQuerySchema } from "../../validators/certificate.pub
 import { streamCertificate } from "../../services/certificate/pdf.service";
 
 import { handleControllerError } from "../../utils/controllerError";
+import { setCertAdminCookie, clearCertAdminCookie } from "../../utils/authCookie";
 
 /**
  * POST /api/v1/admin/certificate/login
  *
  * Validates credentials against CERTIFICATE_ADMIN_USERNAME /
- * CERTIFICATE_ADMIN_PASSWORD env vars and returns a signed JWT.
+ * CERTIFICATE_ADMIN_PASSWORD env vars, sets an httpOnly cookie,
+ * and returns success without exposing the raw JWT token.
  * No database query is performed.
  */
 async function certificateLogin(
@@ -29,10 +31,58 @@ async function certificateLogin(
     const body = certificateLoginSchema.parse(req.body || {});
     const result = await certificateAdminService.login(body);
 
+    // Set secure httpOnly cookie
+    setCertAdminCookie(res, result.token);
+
     res.status(200).json({
       success: true,
       message: "Certificate admin login successful",
-      token: result.token,
+    });
+  } catch (error: unknown) {
+    handleControllerError(error, res, next);
+  }
+}
+
+/**
+ * POST /api/v1/admin/certificate/logout
+ *
+ * Clears the certificate admin httpOnly cookie.
+ */
+async function certificateLogout(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    clearCertAdminCookie(res);
+
+    res.status(200).json({
+      success: true,
+      message: "Certificate admin logged out successfully",
+    });
+  } catch (error: unknown) {
+    handleControllerError(error, res, next);
+  }
+}
+
+/**
+ * GET /api/v1/admin/certificate/me
+ *
+ * Returns current authenticated certificate admin session details.
+ */
+async function getCertificateAdminStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    res.status(200).json({
+      success: true,
+      message: "Authenticated",
+      data: {
+        username: req.certificateAdmin?.username || "admin",
+        role: req.certificateAdmin?.role || "certificate_admin",
+      },
     });
   } catch (error: unknown) {
     handleControllerError(error, res, next);
@@ -115,4 +165,11 @@ async function adminDownloadCertificate(
   }
 }
 
-export { certificateLogin, addWinner, listWinners, adminDownloadCertificate };
+export {
+  certificateLogin,
+  certificateLogout,
+  getCertificateAdminStatus,
+  addWinner,
+  listWinners,
+  adminDownloadCertificate,
+};

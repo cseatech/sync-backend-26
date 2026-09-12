@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyCertificateToken, CertificateAdminJwtPayload } from "../utils/jwt";
+import { getCertAdminCookie } from "../utils/authCookie";
 
 // Extend Express Request to carry the certificate admin identity
 declare global {
@@ -13,8 +14,9 @@ declare global {
 /**
  * Middleware that protects certificate admin routes.
  *
- * Verifies the Bearer token against the CERTIFICATE_ADMIN_JWT_SECRET,
- * and ensures the decoded payload carries role === "certificate_admin".
+ * Verifies the token (from httpOnly cookie or Bearer header) against the
+ * CERTIFICATE_ADMIN_JWT_SECRET, and ensures the decoded payload carries
+ * role === "certificate_admin".
  *
  * This is intentionally separate from the main `protect` middleware so
  * that certificate admin tokens cannot be used on regular admin routes
@@ -27,7 +29,9 @@ function protectCertificateAdmin(
 ): void {
   try {
     const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : getCertAdminCookie(req.headers.cookie);
 
     if (!token) {
       res.status(401).json({
