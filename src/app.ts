@@ -17,6 +17,9 @@ import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
 
 const app = express();
 
+// Trust reverse proxy headers (e.g. Render / Vercel load balancers)
+app.set("trust proxy", 1);
+
 // ── Helmet: lightweight security headers ─────────────────────
 // - CSP disabled to avoid breaking the frontend
 // - X-Frame-Options: DENY prevents clickjacking
