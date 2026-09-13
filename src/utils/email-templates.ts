@@ -25,7 +25,7 @@ try {
 } catch {
   // Fallback: if logo file is missing, use an empty buffer.
   // The email will still render — the <img> tag will just show alt text.
-  console.warn(`⚠️  CSEA logo not found at ${CSEA_LOGO_PATH}`);
+  console.warn(`CSEA logo not found at ${CSEA_LOGO_PATH}`);
   cseaLogoBuffer = Buffer.alloc(0);
 }
 
@@ -152,7 +152,7 @@ export function registrationOtpHtml(otp: string): string {
     </div>
 
     <p style="color:${COLORS.textSecondary};font-size:13px;line-height:1.6;margin:0 0 8px;">
-      🎯 Sync promotes inter-department collaboration encompassing technical and non-technical events around <strong style="color:${COLORS.textPrimary};">Digital Well-being</strong>.
+      Sync promotes inter-department collaboration encompassing technical and non-technical events around <strong style="color:${COLORS.textPrimary};">Digital Well-being</strong>.
     </p>
     <p style="color:${COLORS.textMuted};font-size:12px;margin:0;">
       If you did not initiate this registration, you can safely ignore this email.
@@ -183,7 +183,7 @@ export function forgotPasswordOtpHtml(otp: string): string {
     <!-- Security notice -->
     <div style="background:rgba(243,156,18,0.08);border-left:3px solid #f39c12;border-radius:0 8px 8px 0;padding:14px 16px;margin:0 0 16px;">
       <p style="color:${COLORS.textSecondary};font-size:13px;line-height:1.5;margin:0;">
-        🔒 <strong style="color:${COLORS.textPrimary};">Security tip:</strong> Never share this code with anyone. The Sync team will never ask you for your OTP.
+         <strong style="color:${COLORS.textPrimary};">Security tip:</strong> Never share this code with anyone. The Sync team will never ask you for your OTP.
       </p>
     </div>
 
@@ -249,7 +249,7 @@ export function registrationConfirmationHtml(details: RegistrationDetails): stri
     <!-- Info banner -->
     <div style="background:${COLORS.accentGlow};border-left:3px solid ${COLORS.accent};border-radius:0 8px 8px 0;padding:14px 16px;margin:0 0 16px;">
       <p style="color:${COLORS.textSecondary};font-size:13px;line-height:1.6;margin:0;">
-        📅 <strong style="color:${COLORS.textPrimary};">Mark your calendar!</strong> Sync '26 blossoms on <strong style="color:${COLORS.accent};">25th &amp; 26th September 2026</strong>. Encompassing multifarious events, this version has the benchmark features to enthrall the multitude.
+         <strong style="color:${COLORS.textPrimary};">Mark your calendar!</strong> Sync '26 blossoms on <strong style="color:${COLORS.accent};">25th &amp; 26th September 2026</strong>. Encompassing multifarious events, this version has the benchmark features to enthrall the multitude.
       </p>
     </div>
 
@@ -258,5 +258,5 @@ export function registrationConfirmationHtml(details: RegistrationDetails): stri
     </p>
   `;
 
-  return wrapInLayout("Registration Confirmed! 🎉", "Sync '26 · Welcome Aboard", body);
+  return wrapInLayout("Registration Confirmed!", "Sync '26 · Welcome Aboard", body);
 }
