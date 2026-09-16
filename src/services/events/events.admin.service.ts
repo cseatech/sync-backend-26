@@ -215,6 +215,7 @@ async function addTeamParticipants(
     .select({
       user_id: users.user_id,
       csea_code: users.csea_code,
+      register_number: users.register_number,
       full_name: users.full_name,
     })
     .from(users)
@@ -227,7 +228,7 @@ async function addTeamParticipants(
     }
   }
 
-  // Guard against duplicate registrations
+  // Guard against duplicate registrations (by user_id / CSEA code)
   const existingRows = await db
     .select({ user_id: eventParticipation.user_id })
     .from(eventParticipation)
@@ -245,6 +246,26 @@ async function addTeamParticipants(
       .join(", ");
     throwError(
       `Participant(s) already registered for this event: ${alreadyRegistered}`,
+      409,
+    );
+  }
+
+  // Guard against duplicate roll numbers — a student with the same register_number
+  // must not appear more than once in an event, even under a different CSEA code
+  const registeredRolls = await db
+    .select({ register_number: users.register_number })
+    .from(eventParticipation)
+    .innerJoin(users, eq(eventParticipation.user_id, users.user_id))
+    .where(eq(eventParticipation.event_id, parsedId));
+
+  const incomingRolls = resolvedParticipants.map((p) => p.register_number);
+  const rollClashes = incomingRolls.filter((roll) =>
+    registeredRolls.some((existing) => existing.register_number === roll),
+  );
+
+  if (rollClashes.length > 0) {
+    throwError(
+      `Student(s) with roll number(s) already registered for this event: ${rollClashes.join(", ")}`,
       409,
     );
   }
