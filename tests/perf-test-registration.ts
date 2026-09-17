@@ -15,9 +15,8 @@
  *    Graphile      → ~5 connections (concurrency 3 + LISTEN + utils, Session Pooler, port 5432)
  *    Total         → ~13 connections (safely under 15)
  *
- *  Brevo free plan limit = 300 emails/day.
+ *  ZeptoMail API for transactional email delivery.
  *  140 registrations × 2 emails each (OTP + confirmation) = 280 emails.
- *  Leaves 20 emails headroom.
  *
  *  IMPORTANT: Your backend server must NOT be running simultaneously,
  *  because this script initialises its own Graphile worker instance.
@@ -28,11 +27,11 @@
 
 import "dotenv/config";
 
-import { initializeWorker, shutdownWorker } from "./src/workers/index";
-import registrationService from "./src/services/auth/registration.service";
-import { registrationCache } from "./src/cache/registrationCache";
-import { db, pool } from "./src/db/index";
-import { users } from "./src/db/schema";
+import { initializeWorker, shutdownWorker } from "../src/workers/index";
+import registrationService from "../src/services/auth/registration.service";
+import { registrationCache } from "../src/cache/registrationCache";
+import { db, pool } from "../src/db/index";
+import { users } from "../src/db/schema";
 import { like, inArray } from "drizzle-orm";
 
 // ── Configuration ────────────────────────────────────────────
@@ -55,7 +54,7 @@ const REAL_EMAILS = [
   "nrarshad1608@gmail.com",
 ];
 
-// Total = TOTAL_DUMMY + REAL_EMAILS.length = 113 + 7 = 120 (= 240 emails, within 260 Brevo quota)
+// Total = TOTAL_DUMMY + REAL_EMAILS.length = 113 + 7 = 120 (= 240 emails)
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -281,7 +280,7 @@ async function main() {
       `(${formatMs(batchDuration)})`
     );
 
-    // Delay between batches (let worker/Brevo breathe)
+    // Delay between batches (let worker/mail service breathe)
     if (batchEnd < allEmails.length) {
       await sleep(BATCH_DELAY_MS);
     }

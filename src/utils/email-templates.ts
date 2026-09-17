@@ -107,7 +107,7 @@ function wrapInLayout(headerTitle: string, headerSubtitle: string, bodyHtml: str
                 Sync '26 — Department of Computer Science
               </p>
               <p style="color:${COLORS.textMuted};font-size:11px;margin:0;line-height:1.5;">
-                25th &amp; 26th September 2026 &nbsp;·&nbsp; Digital Well-being
+                25th &amp; 26th September 2026
               </p>
             </td>
           </tr>
@@ -152,7 +152,7 @@ export function registrationOtpHtml(otp: string): string {
     </div>
 
     <p style="color:${COLORS.textSecondary};font-size:13px;line-height:1.6;margin:0 0 8px;">
-      Sync promotes inter-department collaboration encompassing technical and non-technical events around <strong style="color:${COLORS.textPrimary};">Digital Well-being</strong>.
+      Sync promotes inter-department collaboration encompassing technical and non-technical events.
     </p>
     <p style="color:${COLORS.textMuted};font-size:12px;margin:0;">
       If you did not initiate this registration, you can safely ignore this email.
@@ -221,7 +221,7 @@ export function registrationConfirmationHtml(details: RegistrationDetails): stri
       Dear <strong>${fullName}</strong>,
     </p>
     <p style="color:${COLORS.textSecondary};font-size:14px;line-height:1.7;margin:0 0 24px;">
-      Welcome to <strong style="color:${COLORS.accent};">Sync '26</strong>! Your registration has been confirmed. We're excited to have you be part of this celebration of technology and creativity around <strong style="color:${COLORS.textPrimary};">Digital Well-being</strong>.
+      Welcome to <strong style="color:${COLORS.accent};">Sync '26</strong>! Your registration has been confirmed. We're excited to have you be part of this celebration of technology and creativity.
     </p>
 
     <!-- Registration Code -->

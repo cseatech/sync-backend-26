@@ -1,4 +1,5 @@
-import nodemailer from "nodemailer";
+// Use require for CommonJS compatibility with ZeptoMail's dual-CJS bundle
+const { SendMailClient } = require("zeptomail");
 
 /**
  * Attachment descriptor for inline or regular email attachments.
@@ -10,40 +11,27 @@ interface MailAttachment {
   contentDisposition?: "inline" | "attachment";
 }
 
-// ── Brevo (Sendinblue) SMTP transporter ──────────────────────
-// Using Brevo's SMTP relay for transactional emails.
-// Credentials are read from .env (BREVO_SMTP_KEY, BREVO_SENDER_EMAIL).
-const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.BREVO_LOGIN_EMAIL,
-    pass: process.env.BREVO_SMTP_KEY,
-  },
-  pool: true,
-  maxConnections: 5,
-  maxMessages: 100,
-});
+interface ZeptoMailClient {
+  sendMail(payload: any): Promise<unknown>;
+}
 
-// ── Generic SMTP transporter (uncomment when switching providers) ──
-// const transporter = process.env.SMTP_HOST
-//   ? nodemailer.createTransport({
-//       host: process.env.SMTP_HOST,
-//       port: Number(process.env.SMTP_PORT) || 587,
-//       secure: Number(process.env.SMTP_PORT) === 465,
-//       auth: {
-//         user: process.env.SMTP_USER,
-//         pass: process.env.SMTP_PASS,
-//       },
-//       pool: true,
-//       maxConnections: 5,
-//       maxMessages: 100,
-//     })
-//   : null;
+let clientInstance: ZeptoMailClient | null = null;
+
+function getZeptoMailClient(): ZeptoMailClient {
+  if (!clientInstance) {
+    const url =
+      process.env.ZEPTOMAIL_URL || "https://api.zeptomail.in/v1.1/email";
+    const token = process.env.ZEPTOMAIL_TOKEN;
+    if (!token) {
+      throw new Error("Missing ZEPTOMAIL_TOKEN environment variable");
+    }
+    clientInstance = new SendMailClient({ url, token });
+  }
+  return clientInstance!;
+}
 
 /**
- * Send an email via Brevo SMTP relay.
+ * Send an email via ZeptoMail API.
  *
  * @param to          - Recipient email address
  * @param subject     - Email subject line
@@ -56,31 +44,83 @@ async function sendMail(
   html: string,
   attachments?: MailAttachment[],
 ): Promise<void> {
-  const senderEmail =
-    process.env.BREVO_SENDER_EMAIL || "noreply@symposium.com";
+  const senderAddress =
+    process.env.ZEPTOMAIL_SENDER_ADDRESS || "noreply@cseaceg.org.in";
+  const senderName = process.env.ZEPTOMAIL_SENDER_NAME || "noreply";
 
   // ── IMPORTANT: Bypass sending for dummy test emails ──
-  // Brevo free tier allows 300 emails/day. Sending 113 @example.com
-  // emails per run will instantly burn the quota and cause Brevo to
-  // flag the account for high bounce rates, silently dropping real emails.
-  if (to.toLowerCase().endsWith("@example.com") || to.toLowerCase().endsWith("@loadtest.local")) {
+  if (
+    to.toLowerCase().endsWith("@example.com") ||
+    to.toLowerCase().endsWith("@loadtest.local")
+  ) {
     // Simulate slight network delay
     await new Promise((resolve) => setTimeout(resolve, 150));
     return;
   }
 
-  await transporter.sendMail({
-    from: senderEmail,
-    to,
+  const client = getZeptoMailClient();
+
+  const zeptoAttachments: Array<{
+    name: string;
+    content: string;
+    mime_type?: string;
+  }> = [];
+
+  const zeptoInlineImages: Array<{
+    cid: string;
+    content: string;
+    mime_type?: string;
+  }> = [];
+
+  if (attachments && attachments.length > 0) {
+    for (const att of attachments) {
+      const base64Content = att.content.toString("base64");
+      const ext = att.filename.split(".").pop()?.toLowerCase();
+      let mimeType = "application/octet-stream";
+      if (ext === "png") mimeType = "image/png";
+      else if (ext === "jpg" || ext === "jpeg") mimeType = "image/jpeg";
+      else if (ext === "pdf") mimeType = "application/pdf";
+
+      if (att.contentDisposition === "inline" || att.cid) {
+        zeptoInlineImages.push({
+          cid: att.cid || att.filename,
+          content: base64Content,
+          mime_type: mimeType,
+        });
+      } else {
+        zeptoAttachments.push({
+          name: att.filename,
+          content: base64Content,
+          mime_type: mimeType,
+        });
+      }
+    }
+  }
+
+  const payload: any = {
+    from: {
+      address: senderAddress,
+      name: senderName,
+    },
+    to: [
+      {
+        email_address: {
+          address: to,
+        },
+      },
+    ],
     subject,
-    html,
-    attachments: attachments?.map((a) => ({
-      filename: a.filename,
-      content: a.content,
-      cid: a.cid,
-      contentDisposition: a.contentDisposition,
-    })),
-  });
+    htmlbody: html,
+  };
+
+  if (zeptoAttachments.length > 0) {
+    payload.attachments = zeptoAttachments;
+  }
+  if (zeptoInlineImages.length > 0) {
+    payload.inline_images = zeptoInlineImages;
+  }
+
+  await client.sendMail(payload);
 }
 
 export { sendMail };
