@@ -28,8 +28,8 @@ async function startServer(): Promise<void> {
     }
 
     // ── 2. HTTP server ──
-    const server: Server = app.listen(config.PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${config.PORT}`);
+    const server: Server = app.listen(config.PORT, "127.0.0.1", () => {
+      console.log(`🚀 Server running on http://127.0.0.1:${config.PORT}`);
     });
 
     // ── 3. Graceful shutdown ──

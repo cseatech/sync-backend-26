@@ -32,12 +32,19 @@ app.use(
   }),
 );
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://127.0.0.1:5173"
+].filter((origin): origin is string => Boolean(origin));
+
 app.use(
   cors({
-    origin: true,
+    origin: allowedOrigins,
     credentials: true,
   }),
 );
+
+
 
 // ── Request logging (skipped in test mode to avoid I/O backpressure) ──
 if (process.env.NODE_ENV !== "test") {
