@@ -12,6 +12,7 @@ import path from "path";
 const CSEA_LOGO_PATH = path.resolve(
   __dirname,
   "..",
+  "..",
   "csea-logo.png",
 );
 
