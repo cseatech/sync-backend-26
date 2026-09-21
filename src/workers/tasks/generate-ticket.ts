@@ -37,6 +37,14 @@ const generateTicketTask: Task = async (payload, helpers) => {
     `Generating registration ticket for ${email} — code ${cseaCode}`,
   );
 
+  // NOTE: Confirmation email temporarily disabled to reduce mail costs.
+  // Re-enable by removing this early return and uncommenting the block below.
+  helpers.logger.info(
+    `[generate-ticket] SKIPPED — confirmation email disabled for ${email} (${cseaCode})`,
+  );
+  return;
+
+  /* ── RE-ENABLE BLOCK START ──
   // Generate QR code as PNG buffer with CID attachment.
   // SVG would be lighter, but email clients (Gmail, Outlook) strip <svg>
   // tags for security. PNG + CID is the only universally supported method.
@@ -66,6 +74,7 @@ const generateTicketTask: Task = async (payload, helpers) => {
   ]);
 
   helpers.logger.info(`Registration ticket email sent to ${email}`);
+  ── RE-ENABLE BLOCK END ── */
 };
 
 export { generateTicketTask };

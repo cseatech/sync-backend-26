@@ -169,14 +169,15 @@ async function verifyRegistration(
     const cseaCode = newUser.cseaCode!;
 
     // ── Enqueue ticket generation (QR code + confirmation email) ──
-    await addJob("generate-ticket", {
-      email: payload.email,
-      cseaCode,
-      fullName: payload.fullName,
-      registerNumber: payload.registerNumber,
-      college: payload.college,
-      department: payload.department,
-    });
+    // NOTE: Temporarily disabled to avoid mail costs. Uncomment to re-enable.
+    // await addJob("generate-ticket", {
+    //   email: payload.email,
+    //   cseaCode,
+    //   fullName: payload.fullName,
+    //   registerNumber: payload.registerNumber,
+    //   college: payload.college,
+    //   department: payload.department,
+    // });
 
     return { cseaCode };
   } finally {
