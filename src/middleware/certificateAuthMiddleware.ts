@@ -27,7 +27,8 @@ function protectCertificateAdmin(
 ): void {
   try {
     const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const match = authHeader.match(/^Bearer\s+(.+)$/i);
+    const token = match ? match[1].trim() : null;
 
     if (!token) {
       res.status(401).json({

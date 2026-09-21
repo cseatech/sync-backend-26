@@ -5,10 +5,19 @@ import { Response } from "express";
 
 import { VerifiedWinnerData } from "./certificate.public.service";
 
-// ── Template path ──────────────────────────────────────────────────────────────
-// The blank template PDF lives in Certificate_temp on the project root.
-function resolveTemplatePath(): string {
+// ── Template path resolution ──────────────────────────────────────────────────
+// Supports separate appreciation and participation templates in Cert-new
+function resolveTemplatePath(type: "winner" | "participation" = "winner"): string {
+  const primaryFilename =
+    type === "winner"
+      ? "SYNC_Certificates_2026-app.pdf"
+      : "SYNC_Certificates_2026-part.pdf";
+
   const possiblePaths = [
+    path.resolve(__dirname, "..", "..", "..", "Cert-new", primaryFilename),
+    path.resolve(process.cwd(), "Cert-new", primaryFilename),
+    path.resolve(__dirname, "..", "..", "..", "Cert-new", "SYNC_Certificates_2026.pdf"),
+    path.resolve(process.cwd(), "Cert-new", "SYNC_Certificates_2026.pdf"),
     path.resolve(__dirname, "..", "..", "..", "Certificate_temp", "Sync Winners Certificate without content.pdf"),
     path.resolve(process.cwd(), "Certificate_temp", "Sync Winners Certificate without content.pdf"),
   ];
@@ -19,27 +28,21 @@ function resolveTemplatePath(): string {
     }
   }
 
-  return path.resolve(process.cwd(), "Certificate_temp", "Sync Winners Certificate without content.pdf");
+  return path.resolve(process.cwd(), "Cert-new", primaryFilename);
 }
 
-const TEMPLATE_PATH = resolveTemplatePath();
+const TEMPLATE_PATH = resolveTemplatePath("winner");
 
 
-// ── Exact blank underline positions ────────────────────────────────────────────
-// Sourced from the decompressed page content stream (rectangle operators):
-//   382.4023 286.29825 347.97156 0.75 re  → line 1 blank (after "Mr./Ms.")
-//   150.15617 258.07346 326.57208 1.125 re → line 2 blank (after "of ")
-//   593.2929 256.50415 40.265476 1.125 re  → line 2 blank (between "has secured" and "in the event")
-//   123.93278 224.24571 301.54382 2.182 re → line 3 blank (before "as part of Sync'25")
-//
-// Y baselines confirmed via pdfjs text extraction of both template PDFs:
-//   line 1 y = 288.82  ("This is to certify that Mr./Ms.")
-//   line 2 y = 258.80  ("of _ has secured _ in the event")
-//   line 3 y = 228.79  ("_ as part of Sync'25 organized by CSEA,")
-const BLANK_NAME = { x: 382.40, right: 730.37, y: 288.82 }; // after "Mr./Ms."
-const BLANK_DEPT = { x: 150.16, right: 476.73, y: 258.80 }; // "of __ has secured" (dept + year)
-const BLANK_POS = { x: 593.29, right: 633.56, y: 258.80 }; // "has secured __ in the event"
-const BLANK_EVT = { x: 123.93, right: 425.47, y: 228.79 }; // before "as part of Sync'25"
+// ── Blank underline positions for SYNC'26 Template ────────────────────────────
+// Sourced from SYNC_Certificates_2026-app.pdf layout:
+//   Line 1: "This is to certify that Mr. / Ms. [NAME]"
+//   Line 2: "of [DEPT/YEAR] has secured [POSITION] in the event"
+//   Line 3: "[EVENT NAME] as part of SYNC’26 organised by CSEA..."
+const BLANK_NAME = { x: 300.00, right: 764.18, y: 258.00 }; // after "Mr. / Ms."
+const BLANK_DEPT = { x: 95.00, right: 400.00, y: 228.70 };  // "of __ has secured" (dept + year)
+const BLANK_POS  = { x: 512.00, right: 670.00, y: 228.70 }; // "has secured __ in the event"
+const BLANK_EVT  = { x: 70.40, right: 300.00, y: 199.50 };  // before "as part of SYNC’26"
 
 /**
  * Generate a certificate PDF entirely in RAM and stream it to the Express response.
@@ -86,10 +89,11 @@ async function streamCertificate(res: Response, data: VerifiedWinnerData): Promi
 
   // 4. Embed fonts
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const NAVY = rgb(11 / 255, 37 / 255, 69 / 255); // #0B2545 — matches template accent
+  // Elegant deep slate/navy matching the SYNC 2026 certificate theme (#0F172A)
+  const TEXT_COLOR = rgb(15 / 255, 23 / 255, 42 / 255);
 
-  // Template body text size (measured from pdfjs extraction)
-  const TEMPLATE_SIZE = 18.44;
+  // Template body text size (scaled to match 2026 template's 21pt body typography)
+  const TEMPLATE_SIZE = 20.0;
 
   /**
    * Draw text centered within a blank underline region.
@@ -107,7 +111,7 @@ async function streamCertificate(res: Response, data: VerifiedWinnerData): Promi
       w = boldFont.widthOfTextAtSize(text, size);
     }
     const x = blank.x + (blankW - w) / 2;
-    newPage.drawText(text, { x, y: blank.y, size, font: boldFont, color: NAVY });
+    newPage.drawText(text, { x, y: blank.y, size, font: boldFont, color: TEXT_COLOR });
   };
 
   // 5. Fill the four blank underlines with dynamic user data
