@@ -147,5 +147,43 @@ async function getAllSystemAdmins(
   }
 }
 
-export { getEventAdmins, getAllSystemAdmins, assignEventAdmin, removeEventAdmin };
+/**
+ * GET /api/v1/superadmin/stats
+ *
+ * Returns comprehensive system stats:
+ * - summary totals (participations, teams, users, rounds, events, tech vs non-tech)
+ * - round summary and distribution
+ * - event-wise breakdown with participation, team counts, round details
+ * Superadmin only (privileged = true).
+ */
+async function getSuperAdminStats(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const data = await eventsSuperadminService.getSuperAdminStats(
+      (req.user as AdminJwtPayload)?.admin_id,
+      getPrivileged(req.user),
+    );
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+
+    return;
+  } catch (error: unknown) {
+    handleControllerError(error, res, next);
+  }
+}
+
+export {
+  getEventAdmins,
+  getAllSystemAdmins,
+  assignEventAdmin,
+  removeEventAdmin,
+  getSuperAdminStats,
+};
+
 

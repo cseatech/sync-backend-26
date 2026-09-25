@@ -5,6 +5,7 @@ import {
   getAllSystemAdmins,
   assignEventAdmin,
   removeEventAdmin,
+  getSuperAdminStats,
 } from "../../controllers/events/events.superadmin.controller";
 
 import { protect, authorize } from "../../middleware/authMiddleware";
@@ -12,6 +13,10 @@ import { protect, authorize } from "../../middleware/authMiddleware";
 const router = express.Router();
 
 const adminAuth = [protect, authorize("admin")];
+
+// GET /api/v1/superadmin/stats
+// Returns platform & event participation, team, and round stats (Superadmin only)
+router.get("/superadmin/stats", adminAuth, getSuperAdminStats);
 
 // GET /api/v1/superadmin/admins
 // Returns all system administrators
