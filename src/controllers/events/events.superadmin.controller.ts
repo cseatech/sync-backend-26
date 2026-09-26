@@ -22,6 +22,10 @@ function getPrivileged(user: Request["user"]): boolean {
 /**
  * GET /api/v1/superadmin/events/:event_id/admins
  *
+ * 
+ * smaapkr
+ * 
+ * 
  * Returns all admins assigned to a given event.
  * Superadmin only (privileged = true).
  */
