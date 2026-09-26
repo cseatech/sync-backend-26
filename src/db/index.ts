@@ -12,6 +12,7 @@ import {
   eventParticipation,
   participationGarbage,
   winners,
+  teamsMarks,
 } from "./schema";
 
 const pool = new Pool({
@@ -40,6 +41,7 @@ const db = drizzle(pool, {
     eventParticipation,
     participationGarbage,
     winners,
+    teamsMarks,
   },
 });
 
