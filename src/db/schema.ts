@@ -7,6 +7,7 @@ import {
   date,
   integer,
   jsonb,
+  numeric,
   smallint,
   text,
   time,
@@ -329,6 +330,36 @@ const winners = pgTable(
   }),
 );
 
+const teamsMarks = pgTable(
+  "teams_marks",
+  {
+    event_id: bigint("event_id", {
+      mode: "number",
+    }).notNull(),
+
+    team_no: integer("team_no").notNull(),
+
+    marks: numeric("marks", { precision: 5, scale: 2 }).default("0"),
+
+    updated_at: timestamp("updated_at", {
+      withTimezone: true,
+    }).defaultNow(),
+  },
+
+  (table) => ({
+    pk: primaryKey({
+      columns: [table.event_id, table.team_no],
+      name: "event_teams_pkey",
+    }),
+
+    eventFk: foreignKey({
+      columns: [table.event_id],
+      foreignColumns: [events.event_id],
+      name: "event_teams_event_id_fkey",
+    }).onDelete("cascade"),
+  }),
+);
+
 export {
   users,
   admins,
@@ -338,4 +369,5 @@ export {
   eventParticipation,
   participationGarbage,
   winners,
+  teamsMarks,
 };

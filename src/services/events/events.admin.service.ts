@@ -2,7 +2,7 @@ import { eq, sql, inArray, and } from "drizzle-orm";
 
 import { db } from "../../db/index";
 
-import { users, admins, events, adminAccess, eventParticipation, participationGarbage } from "../../db/schema";
+import { users, admins, events, adminAccess, eventParticipation, participationGarbage, teamsMarks } from "../../db/schema";
 
 import { throwError, handleDbError } from "../../utils/serviceError";
 
@@ -483,6 +483,92 @@ async function removeTeam(
   };
 }
 
+/**
+ * Upsert (insert or update) marks for a team in an event.
+ *
+ * @param eventId - Event ID
+ * @param teamNo  - Team number
+ * @param marks   - Marks value (numeric)
+ */
+async function upsertTeamMarks(
+  eventId: number | string,
+  teamNo: number | string,
+  marks: number,
+) {
+  const parsedEventId = Number(eventId);
+  const parsedTeamNo = Number(teamNo);
+
+  if (!parsedEventId) throwError("Event ID is required", 400);
+  if (!parsedTeamNo) throwError("Team number is required", 400);
+  if (isNaN(marks)) throwError("Marks must be a valid number", 400);
+
+  // Verify event exists
+  const [event] = await db
+    .select({ event_id: events.event_id, event_name: events.event_name })
+    .from(events)
+    .where(eq(events.event_id, parsedEventId))
+    .limit(1);
+
+  if (!event) throwError("Event not found", 404);
+
+  // Upsert: insert or update on conflict
+  await db
+    .insert(teamsMarks)
+    .values({
+      event_id: parsedEventId,
+      team_no: parsedTeamNo,
+      marks: String(marks),
+      updated_at: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: [teamsMarks.event_id, teamsMarks.team_no],
+      set: {
+        marks: String(marks),
+        updated_at: new Date(),
+      },
+    });
+
+  return {
+    event_id: parsedEventId,
+    team_no: parsedTeamNo,
+    marks,
+  };
+}
+
+/**
+ * Get all marks for teams in an event.
+ *
+ * @param eventId - Event ID
+ */
+async function getEventMarks(eventId: number | string) {
+  const parsedEventId = Number(eventId);
+
+  if (!parsedEventId) throwError("Event ID is required", 400);
+
+  // Verify event exists
+  const [event] = await db
+    .select({ event_id: events.event_id, event_name: events.event_name })
+    .from(events)
+    .where(eq(events.event_id, parsedEventId))
+    .limit(1);
+
+  if (!event) throwError("Event not found", 404);
+
+  const marks = await db
+    .select({
+      team_no: teamsMarks.team_no,
+      marks: teamsMarks.marks,
+      updated_at: teamsMarks.updated_at,
+    })
+    .from(teamsMarks)
+    .where(eq(teamsMarks.event_id, parsedEventId));
+
+  return {
+    event: { event_id: event.event_id, event_name: event.event_name },
+    marks,
+  };
+}
+
 export default {
   getParticipantByCseaCode,
   getAssignedEvents,
@@ -490,4 +576,6 @@ export default {
   addTeamParticipants,
   removeParticipant,
   removeTeam,
+  upsertTeamMarks,
+  getEventMarks,
 };

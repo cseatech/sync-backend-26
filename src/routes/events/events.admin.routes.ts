@@ -7,6 +7,8 @@ import {
   addEventParticipants,
   removeEventParticipant,
   removeEventTeam,
+  upsertTeamMarks,
+  getEventMarks,
 } from "../../controllers/events/events.admin.controller";
 
 import { protect, authorize } from "../../middleware/authMiddleware";
@@ -35,5 +37,11 @@ router.delete("/admin/events/:event_id/participant", adminAuth, removeEventParti
 
 // DELETE /api/v1/admin/events/:event_id/team/:team_no
 router.delete("/admin/events/:event_id/team/:team_no", adminAuth, removeEventTeam);
+
+// GET /api/v1/admin/events/:event_id/marks
+router.get("/admin/events/:event_id/marks", adminAuth, getEventMarks);
+
+// PUT /api/v1/admin/events/:event_id/team/:team_no/marks
+router.put("/admin/events/:event_id/team/:team_no/marks", adminAuth, upsertTeamMarks);
 
 export default router;

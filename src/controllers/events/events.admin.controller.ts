@@ -200,6 +200,74 @@ async function removeEventTeam(
   }
 }
 
+/**
+ * PUT /api/v1/admin/events/:event_id/team/:team_no/marks
+ *
+ * Upsert marks for a team in an event.
+ * marks is in the request body.
+ *
+ * Admin only.
+ */
+async function upsertTeamMarks(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const eventParams = eventIdParamSchema.parse(req.params || {});
+    const teamParams = teamNoParamSchema.parse(req.params || {});
+    const { marks } = req.body || {};
+
+    if (marks === undefined || marks === null || isNaN(Number(marks))) {
+      res.status(400).json({ success: false, message: "marks must be a valid number" });
+      return;
+    }
+
+    const data = await eventsAdminService.upsertTeamMarks(
+      eventParams.event_id,
+      teamParams.team_no,
+      Number(marks),
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Marks updated successfully",
+      data,
+    });
+
+    return;
+  } catch (error: unknown) {
+    handleControllerError(error, res, next);
+  }
+}
+
+/**
+ * GET /api/v1/admin/events/:event_id/marks
+ *
+ * Returns all team marks for the given event.
+ *
+ * Admin only.
+ */
+async function getEventMarks(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const params = eventIdParamSchema.parse(req.params || {});
+    const data = await eventsAdminService.getEventMarks(params.event_id);
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+
+    return;
+  } catch (error: unknown) {
+    handleControllerError(error, res, next);
+  }
+}
+
 export {
   getParticipant,
   getAdminAssignedEvents,
@@ -207,4 +275,6 @@ export {
   addEventParticipants,
   removeEventParticipant,
   removeEventTeam,
+  upsertTeamMarks,
+  getEventMarks,
 };

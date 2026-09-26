@@ -19,10 +19,10 @@ import { clearAuthCookie } from "../../utils/authCookie";
 
 const router = express.Router();
 
-// ── Rate limiter: 5 requests per 5-minute window per IP ─────
+// ── Rate limiter: 10 requests per 1-minute window per IP ─────
 const registrationLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 5,
+  windowMs: 1 * 60 * 1000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
