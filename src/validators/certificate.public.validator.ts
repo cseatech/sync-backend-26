@@ -36,6 +36,11 @@ const downloadCertificateQuerySchema = z.object({
     .number()
     .int("eventId must be an integer")
     .positive("eventId must be a positive integer"),
+
+  type: z
+    .enum(["winner", "appreciation", "participation"])
+    .optional()
+    .default("winner"),
 });
 
 type GetCertificatesByCodeParams = z.infer<
