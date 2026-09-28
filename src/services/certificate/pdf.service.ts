@@ -37,25 +37,25 @@ function resolveTemplatePath(type: "winner" | "participation" = "winner"): strin
 //
 // 1. APPRECIATION TEMPLATE (SYNC_Certificates_2026-app.pdf)
 //   Line 1: "This is to certify that Mr. / Ms. [NAME]"
-//           Baseline y = 235.38; text baseline placed at y = 238.0
+//           Dashes: x = 293.2 to 733.5; Baseline y = 235.38; text baseline placed at y = 238.0
 //   Line 2: "of [DEPT/YEAR] has secured [POSITION] in the event"
-//           Baseline y = 203.87; text baseline placed at y = 206.5
+//           Dept dashes: x = 87.3 to 410.7; Position dashes: x = 505.9 to 671.0; text baseline y = 206.5
 //   Line 3: "[EVENT NAME] as part of SYNC’26 organised by CSEA..."
-//           Baseline y = 172.36; text baseline placed at y = 175.0
-const APP_BLANK_NAME = { x: 353.0, right: 793.0, y: 238.0 }; // after "Mr. / Ms."
-const APP_BLANK_DEPT = { x: 93.0,  right: 416.0, y: 206.5 }; // "of [___] has secured"
-const APP_BLANK_POS  = { x: 528.0, right: 693.0, y: 206.5 }; // "has secured [___] in the event"
+//           Event dashes: x = 68.5 to 446.9; text baseline y = 175.0
+const APP_BLANK_NAME = { x: 293.0, right: 733.5, y: 238.0 }; // after "Mr. / Ms."
+const APP_BLANK_DEPT = { x: 87.5,  right: 410.5, y: 206.5 }; // "of [___] has secured"
+const APP_BLANK_POS  = { x: 506.0, right: 671.0, y: 206.5 }; // "has secured [___] in the event"
 const APP_BLANK_EVT  = { x: 68.5,  right: 447.0, y: 175.0 }; // before "as part of SYNC’26"
 
 // 2. PARTICIPATION TEMPLATE (SYNC_Certificates_2026-part.pdf)
 //   Line 1: "This is to certify that Mr. / Ms. [NAME] of"
-//           Baseline y = 242.25; text baseline placed at y = 245.0
+//           Dashes: x = 329.8 to 763.2; Baseline y = 242.25; text baseline placed at y = 245.0
 //   Line 2: "[DEPT/YEAR] has participated in the event [EVENT NAME]"
-//           Baseline y = 210.74; text baseline placed at y = 213.5
+//           Dept dashes: x = 53.8 to 205.1; Event dashes: x = 422.0 to 786.5; text baseline y = 213.5
 //   Line 3: "as part of SYNC’26 organised by CSEA, College of Engineering Guindy..." (no blanks)
-const PART_BLANK_NAME = { x: 338.5, right: 772.0, y: 245.0 }; // after "Mr. / Ms." before "of"
-const PART_BLANK_DEPT = { x: 54.0,  right: 205.0, y: 213.5 }; // before "has participated in the event"
-const PART_BLANK_EVT  = { x: 471.0, right: 835.5, y: 213.5 }; // after "in the event"
+const PART_BLANK_NAME = { x: 329.5, right: 763.0, y: 245.0 }; // after "Mr. / Ms." before "of"
+const PART_BLANK_DEPT = { x: 53.8,  right: 205.1, y: 213.5 }; // before "has participated in the event"
+const PART_BLANK_EVT  = { x: 422.0, right: 786.5, y: 213.5 }; // after "in the event"
 
 /**
  * Generate a certificate PDF entirely in RAM and stream it to the Express response.
