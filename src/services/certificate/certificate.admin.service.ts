@@ -1,7 +1,7 @@
 import { eq, and } from "drizzle-orm";
 
 import { db } from "../../db/index";
-import { users, events, winners } from "../../db/schema";
+import { users, events, winners, eventParticipation } from "../../db/schema";
 
 import { signCertificateToken, CertificateAdminJwtPayload } from "../../utils/jwt";
 
@@ -152,7 +152,6 @@ async function getAllWinners() {
  * Throws 404 when no matching record exists.
  */
 async function getWinnerDataForCertificate(csea_code: string, event_id: number) {
-
   const [row] = await db
     .select({
       full_name: users.full_name,
@@ -179,4 +178,39 @@ async function getWinnerDataForCertificate(csea_code: string, event_id: number) 
   return row!;
 }
 
-export default { login, insertWinner, getAllWinners, getWinnerDataForCertificate };
+/**
+ * Fetch participant data for participation certificate PDF generation, callable by a
+ * certificate admin without requiring a user JWT.
+ *
+ * Throws 404 when no matching record exists.
+ */
+async function getParticipantDataForCertificate(csea_code: string, event_id: number) {
+  const [row] = await db
+    .select({
+      full_name: users.full_name,
+      department: users.department,
+      year: users.year,
+      event_name: events.event_name,
+    })
+    .from(eventParticipation)
+    .innerJoin(users, eq(eventParticipation.user_id, users.user_id))
+    .innerJoin(events, eq(eventParticipation.event_id, events.event_id))
+    .where(
+      and(
+        eq(users.csea_code, csea_code),
+        eq(eventParticipation.event_id, event_id),
+      ),
+    )
+    .limit(1);
+
+  if (!row) {
+    throwError(`No participation record found for CSEA code: ${csea_code} in event ID: ${event_id}`, 404);
+  }
+
+  return {
+    ...row!,
+    position: null,
+  };
+}
+
+export default { login, insertWinner, getAllWinners, getWinnerDataForCertificate, getParticipantDataForCertificate };

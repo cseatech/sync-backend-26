@@ -17,11 +17,17 @@ async function protect(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const cookieToken = getAuthCookie(req.headers.cookie);
     const authHeader = req.headers.authorization || "";
+    const bearerToken =
+      authHeader.startsWith("Bearer ") &&
+      authHeader.slice(7).trim() &&
+      authHeader.slice(7).trim() !== "null" &&
+      authHeader.slice(7).trim() !== "undefined"
+        ? authHeader.slice(7).trim()
+        : null;
 
-    const token = authHeader.startsWith("Bearer ")
-      ? authHeader.slice(7)
-      : getAuthCookie(req.headers.cookie);
+    const token = cookieToken || bearerToken;
 
     if (!token) {
       res.status(401).json({

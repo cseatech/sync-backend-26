@@ -3,69 +3,81 @@ import fs from "fs";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { Response } from "express";
 
-import { VerifiedWinnerData } from "./certificate.public.service";
+import { CertificateData } from "./certificate.public.service";
 
 // ── Template path resolution ──────────────────────────────────────────────────
-// Supports separate appreciation and participation templates in Cert-new
+// Only uses Cert-new folder templates (no fallback to obsolete folders)
 function resolveTemplatePath(type: "winner" | "participation" = "winner"): string {
-  const primaryFilename =
+  const filenames =
     type === "winner"
-      ? "SYNC_Certificates_2026-app.pdf"
-      : "SYNC_Certificates_2026-part.pdf";
+      ? ["SYNC_Certificates_2026-app.pdf", "SYNC_Certificates_2026_app.pdf"]
+      : ["SYNC_Certificates_2026-part.pdf", "SYNC_Certificates_2026_part.pdf"];
 
-  const possiblePaths = [
-    path.resolve(__dirname, "..", "..", "..", "Cert-new", primaryFilename),
-    path.resolve(process.cwd(), "Cert-new", primaryFilename),
-    path.resolve(__dirname, "..", "..", "..", "Cert-new", "SYNC_Certificates_2026.pdf"),
-    path.resolve(process.cwd(), "Cert-new", "SYNC_Certificates_2026.pdf"),
-    path.resolve(__dirname, "..", "..", "..", "Certificate_temp", "Sync Winners Certificate without content.pdf"),
-    path.resolve(process.cwd(), "Certificate_temp", "Sync Winners Certificate without content.pdf"),
+  const candidateDirs = [
+    path.resolve(__dirname, "..", "..", "..", "Cert-new"),
+    path.resolve(process.cwd(), "Cert-new"),
   ];
 
-  for (const candidate of possiblePaths) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
+  for (const dir of candidateDirs) {
+    for (const filename of filenames) {
+      const candidate = path.join(dir, filename);
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
     }
   }
 
-  return path.resolve(process.cwd(), "Cert-new", primaryFilename);
+  // Default to expected primary in Cert-new
+  return path.resolve(process.cwd(), "Cert-new", filenames[0]);
 }
 
-const TEMPLATE_PATH = resolveTemplatePath("winner");
-
-
-// ── Blank underline positions for SYNC'26 Template ────────────────────────────
-// Sourced from SYNC_Certificates_2026-app.pdf layout:
+// ── Exact Blank Underline Coordinates for SYNC'26 Templates ──────────────────
+// Measured directly from the template's embedded Oswald font glyph metrics and
+// page content stream baselines.
+//
+// 1. APPRECIATION TEMPLATE (SYNC_Certificates_2026-app.pdf)
 //   Line 1: "This is to certify that Mr. / Ms. [NAME]"
+//           Baseline y = 235.38; text baseline placed at y = 238.0
 //   Line 2: "of [DEPT/YEAR] has secured [POSITION] in the event"
+//           Baseline y = 203.87; text baseline placed at y = 206.5
 //   Line 3: "[EVENT NAME] as part of SYNC’26 organised by CSEA..."
-const BLANK_NAME = { x: 300.00, right: 764.18, y: 258.00 }; // after "Mr. / Ms."
-const BLANK_DEPT = { x: 95.00, right: 400.00, y: 228.70 };  // "of __ has secured" (dept + year)
-const BLANK_POS  = { x: 512.00, right: 670.00, y: 228.70 }; // "has secured __ in the event"
-const BLANK_EVT  = { x: 70.40, right: 300.00, y: 199.50 };  // before "as part of SYNC’26"
+//           Baseline y = 172.36; text baseline placed at y = 175.0
+const APP_BLANK_NAME = { x: 353.0, right: 793.0, y: 238.0 }; // after "Mr. / Ms."
+const APP_BLANK_DEPT = { x: 93.0,  right: 416.0, y: 206.5 }; // "of [___] has secured"
+const APP_BLANK_POS  = { x: 528.0, right: 693.0, y: 206.5 }; // "has secured [___] in the event"
+const APP_BLANK_EVT  = { x: 68.5,  right: 447.0, y: 175.0 }; // before "as part of SYNC’26"
+
+// 2. PARTICIPATION TEMPLATE (SYNC_Certificates_2026-part.pdf)
+//   Line 1: "This is to certify that Mr. / Ms. [NAME] of"
+//           Baseline y = 242.25; text baseline placed at y = 245.0
+//   Line 2: "[DEPT/YEAR] has participated in the event [EVENT NAME]"
+//           Baseline y = 210.74; text baseline placed at y = 213.5
+//   Line 3: "as part of SYNC’26 organised by CSEA, College of Engineering Guindy..." (no blanks)
+const PART_BLANK_NAME = { x: 338.5, right: 772.0, y: 245.0 }; // after "Mr. / Ms." before "of"
+const PART_BLANK_DEPT = { x: 54.0,  right: 205.0, y: 213.5 }; // before "has participated in the event"
+const PART_BLANK_EVT  = { x: 471.0, right: 835.5, y: 213.5 }; // after "in the event"
 
 /**
  * Generate a certificate PDF entirely in RAM and stream it to the Express response.
  *
- * Strategy
- * ────────
- * The blank template is embedded as a full-bleed XObject background on a fresh
- * PDFDocument page. This avoids inheriting any graphics-state (opacity/blend-mode)
- * operators from the template that could make overlaid text invisible.
- *
- * Dynamic text is then placed exactly inside the template's blank underline areas,
- * whose coordinates are measured from the decompressed page content stream. Every
- * text block is centered within its blank and auto-scales below 18.44 pt when the
- * string is wider than the available space.
- *
  * @param res  - Express Response object to pipe into
- * @param data - Verified winner data extracted from the database
+ * @param data - Verified winner or participant data extracted from the database
+ * @param type - "winner" (Appreciation) or "participation" (Participation)
  */
-async function streamCertificate(res: Response, data: VerifiedWinnerData): Promise<void> {
+async function streamCertificate(
+  res: Response,
+  data: CertificateData,
+  type: "winner" | "participation" = "winner",
+): Promise<void> {
   const { full_name, department, year, event_name, position } = data;
+  const templatePath = resolveTemplatePath(type);
+
+  if (!fs.existsSync(templatePath)) {
+    throw new Error(`Certificate template not found at ${templatePath}`);
+  }
 
   // 1. Read blank template bytes
-  const templateBytes = await fs.promises.readFile(TEMPLATE_PATH);
+  const templateBytes = await fs.promises.readFile(templatePath);
 
   // 2. Load template, embed its first page into a fresh document
   //    (avoids inheriting template graphics-state that makes text invisible)
@@ -87,13 +99,13 @@ async function streamCertificate(res: Response, data: VerifiedWinnerData): Promi
     height: PAGE_H,
   });
 
-  // 4. Embed fonts
+  // 4. Embed fonts & text styling
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   // Elegant deep slate/navy matching the SYNC 2026 certificate theme (#0F172A)
   const TEXT_COLOR = rgb(15 / 255, 23 / 255, 42 / 255);
 
-  // Template body text size (scaled to match 2026 template's 21pt body typography)
-  const TEMPLATE_SIZE = 20.0;
+  // Base font size for certificate dynamic text (17.5 pt matches template typography)
+  const BASE_FONT_SIZE = 17.5;
 
   /**
    * Draw text centered within a blank underline region.
@@ -104,7 +116,7 @@ async function streamCertificate(res: Response, data: VerifiedWinnerData): Promi
     blank: { x: number; right: number; y: number },
   ) => {
     const blankW = blank.right - blank.x;
-    let size = TEMPLATE_SIZE;
+    let size = BASE_FONT_SIZE;
     let w = boldFont.widthOfTextAtSize(text, size);
     while (w > blankW && size > 8) {
       size -= 0.5;
@@ -114,19 +126,28 @@ async function streamCertificate(res: Response, data: VerifiedWinnerData): Promi
     newPage.drawText(text, { x, y: blank.y, size, font: boldFont, color: TEXT_COLOR });
   };
 
-  // 5. Fill the four blank underlines with dynamic user data
-  drawInBlank(full_name, BLANK_NAME);              // "This is to certify that Mr./Ms. [NAME]"
-  drawInBlank(deptYearLabel(department, year), BLANK_DEPT); // "of [CSE - 3rd YEAR] has secured"
-  drawInBlank(ordinalSuffix(position), BLANK_POS); // "has secured [1st] in the event"
-  drawInBlank(event_name, BLANK_EVT);              // "[EVENT NAME] as part of Sync'25..."
+  // 5. Fill blank underlines according to certificate type
+  if (type === "participation") {
+    // Participation certificate: 3 blanks (Name, Dept/Year, Event)
+    drawInBlank(full_name, PART_BLANK_NAME);
+    drawInBlank(deptYearLabel(department, year), PART_BLANK_DEPT);
+    drawInBlank(event_name, PART_BLANK_EVT);
+  } else {
+    // Winner / Appreciation certificate: 4 blanks (Name, Dept/Year, Position, Event)
+    drawInBlank(full_name, APP_BLANK_NAME);
+    drawInBlank(deptYearLabel(department, year), APP_BLANK_DEPT);
+    drawInBlank(ordinalSuffix(position ?? 1), APP_BLANK_POS);
+    drawInBlank(event_name, APP_BLANK_EVT);
+  }
 
   // 6. Save & stream response
   const pdfBytes = await pdfDoc.save();
 
+  const certLabel = type === "participation" ? "Participation" : "Appreciation";
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
     "Content-Disposition",
-    'attachment; filename="Certificate.pdf"',
+    `attachment; filename="Certificate_${certLabel}.pdf"`,
   );
   res.setHeader("Content-Length", pdfBytes.length.toString());
   res.end(Buffer.from(pdfBytes));
@@ -170,7 +191,7 @@ function deptYearLabel(department: string, year: number): string {
     [/ARTIFICIAL INTELLIGENCE/, "AI&DS"],
   ];
 
-  let abbr = department; // default: use as-is
+  let abbr = department;
   for (const [pattern, short] of ABBR) {
     if (pattern.test(upper)) {
       abbr = short;
@@ -182,3 +203,4 @@ function deptYearLabel(department: string, year: number): string {
 }
 
 export { streamCertificate };
+

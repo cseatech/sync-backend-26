@@ -104,12 +104,22 @@ async function adminDownloadCertificate(
     const query = downloadCertificateQuerySchema.parse({
       cseaCode: req.query.csea_code,
       eventId: req.query.event_id,
+      type: req.query.type,
     });
-    const winnerData = await certificateAdminService.getWinnerDataForCertificate(
-      query.cseaCode,
-      query.eventId,
-    );
-    await streamCertificate(res, winnerData);
+
+    if (query.type === "participation") {
+      const participantData = await certificateAdminService.getParticipantDataForCertificate(
+        query.cseaCode,
+        query.eventId,
+      );
+      await streamCertificate(res, participantData, "participation");
+    } else {
+      const winnerData = await certificateAdminService.getWinnerDataForCertificate(
+        query.cseaCode,
+        query.eventId,
+      );
+      await streamCertificate(res, winnerData, "winner");
+    }
   } catch (error: unknown) {
     handleControllerError(error, res, next);
   }
